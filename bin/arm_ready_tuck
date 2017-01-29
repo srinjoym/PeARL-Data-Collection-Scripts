@@ -1,0 +1,11 @@
+#! /usr/bin/env python
+
+from hlpr_manipulation_utils import manipulator
+from hlpr_manipulation_utils.manipulator import *
+
+if __name__ == '__main__':
+  rospy.init_node('arm_ready_tuck', anonymous=True)
+  arm = Arm()
+  arm.ready_pose()
+  r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
+  print "should have taken picture"
