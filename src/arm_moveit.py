@@ -9,6 +9,7 @@ import geometry_msgs.msg
 import std_msgs.msg
 import wpi_jaco_msgs.msg
 import wpi_jaco_msgs.srv
+import time
 from math import pi, floor, ceil, fabs, sin, cos, radians
 
 class ArmMoveIt:
@@ -133,7 +134,8 @@ class ArmMoveIt:
 
   def _simplify_joints(self, joint_dict):
     # Helper function to convert a dictionary of joint values
-    print"entered"
+    print "entered"
+    print joint_dict
     if isinstance(joint_dict, dict):
       simplified_joints = dict()
       for joint in joint_dict:
@@ -153,7 +155,7 @@ class ArmMoveIt:
           simplified_joints.append(self._simplify_angle(a))
         else:
           simplified_joints.append(a)
-
+    print simplified_joints
     return simplified_joints
 
 #   '''Older functions - left for backwards compatibility'''
@@ -162,7 +164,7 @@ class ArmMoveIt:
     ## input: target joint angles (list) of the robot
     ## output: plan from current joint angles to the target one
     try:
-      # print target_joint
+      print target_joint
       print self._simplify_joints(target_joint)
       self.group[0].set_joint_value_target(self._simplify_joints(target_joint))
       self.group[0].set_planner_id(self.planner)
@@ -240,21 +242,57 @@ def ask_orientation(arm,tarPose):
 def ask_angle():
   return input("Angle?")
 
-def same_orientation(arm,tarPose):
+def calc_orientation(angle):
   poseTmp= geometry_msgs.msg.Pose()
-  poseTmp.orientation.x=0.77
-  poseTmp.orientation.y=0.35
-  poseTmp.orientation.z = -0.46
-  poseTmp.orientation.w=-0.25
-  inputQuat=arm.group[0].get_current_pose().pose.orientation                   
+  poseTmp.orientation.x=0
+  poseTmp.orientation.y=0
+  poseTmp.orientation.z = -radians(angle+90)
+  poseTmp.orientation.w= 1
+  # inputQuat=arm.group[0].get_current_pose().pose.orientation                   
   return  poseTmp.orientation                
   
 #   return poseTmp.position
-def calculate_mov(angle):
-  radius = 0.175
+# def calculate_mov(angle):
+#   radius = 0.175
+#   rad = radians(angle)
+#   x = 1.175 + radius*(sin(rad))
+#   y = 0.2+ radius*(cos(rad))
+#   z = 1.2
+#   poseTmp= geometry_msgs.msg.Pose()
+#   poseTmp.position.x=x
+#   poseTmp.position.y=y
+#   poseTmp.position.z=z
+  
+#   return poseTmp.position
+def auto_circle(num_points,arm):
+  jump = (35/num_points)/2
+  tarPose = geometry_msgs.msg.Pose()
+  for angle in range(-75,-40,jump):
+      tarPose.position = calc_mov(angle)
+      tarPose.orientation = calc_orientation(angle)
+      jointTarg = arm.get_IK(tarPose)
+      planTraj = arm.plan_jointTargetInput(jointTarg)
+      if(planTraj!=None):
+        arm.group[0].execute(planTraj)
+        print "going to angle " + str(angle)
+        time.sleep(5)
+
+  for angle in range(-130,-105,jump):
+      tarPose.position = calc_mov(angle)
+      tarPose.orientation = calc_orientation(angle)
+      jointTarg = arm.get_IK(tarPose)
+      planTraj = arm.plan_jointTargetInput(jointTarg)
+      if(planTraj!=None):
+        arm.group[0].execute(planTraj)
+        print "going to angle " + str(angle)
+        time.sleep(5)
+
+
+def calc_mov(angle):
+  radius = 0.5
   rad = radians(angle)
-  x = 1.175 + radius*(sin(rad))
-  y = 0.2+ radius*(cos(rad))
+  x = radius*(sin(rad))+1.3
+  y = radius*(cos(rad))
   z = 1.2
   poseTmp= geometry_msgs.msg.Pose()
   poseTmp.position.x=x
@@ -262,7 +300,7 @@ def calculate_mov(angle):
   poseTmp.position.z=z
   
   return poseTmp.position
-        
+
 def main():
   arm = ArmMoveIt()
 
@@ -275,30 +313,31 @@ def main():
     ##   Assigned tarPose the current Pose of the robot 
     tarPose = arm.group[0].get_current_pose().pose
   
-
+    auto_circle(4,arm)
     ## ask input from user (COMMENT IF NOT USE AND WANT TO ASSIGN MANUAL VALUE IN CODE)    
-    angle = ask_angle()
-    tarPose.position = calculate_mov(angle) 
-    tarPose.orientation = ask_orientation(arm,tarPose)    
+    # angle = ask_angle()
+    # tarPose.position = calc_mov(angle) 
+    # tarPose.orientation = calc_orientation(angle)    
                   
     print '\n The target coordinate is: %s \n' %tarPose     
     
     ## IK for target position  
-    jointTarg = arm.get_IK(tarPose)
-    print 'IK calculation step:DONE' 
-    print jointTarg
+    # jointTarg = arm.get_IK(tarPose)
+    # print 'IK calculation step:DONE' 
+    # print jointTarg
 
-    ## planning with joint target from IK 
-    planTraj =  arm.plan_jointTargetInput(jointTarg)
-    print 'Planning step with target joint angles:DONE' 
-      
+    # ## planning with joint target from IK 
+    # planTraj =  arm.plan_jointTargetInput(jointTarg)
+    # print 'Planning step with target joint angles:DONE' 
+    # if(planTraj != None):
+    #    print 'Execution of the plan' 
+    #    arm.group[0].execute(planTraj)
     ## planning with pose target
     # print 'Planning step with target pose'   
     # planTraj = arm.plan_poseTargetInput(tarPose)
       
     ## execution of the movement   
-    print 'Execution of the plan' 
-    arm.group[0].execute(planTraj)
+   
   
 if __name__ == '__main__':
   ## First initialize moveit_commander and rospy.
