@@ -10,11 +10,15 @@ import std_msgs.msg
 import wpi_jaco_msgs.msg
 import wpi_jaco_msgs.srv
 import time
+import requests
+import tf
+from interactive_markers.interactive_marker_server import *
+from visualization_msgs.msg import *
 from math import pi, floor, ceil, fabs, sin, cos, radians
 
 class ArmMoveIt:
 
-  def __init__(self, planning_frame='base_link', default_planner="RRTConnectkConfigDefault"):
+  def __init__(self, planning_frame='linear_actuator_link', default_planner="RRTConnectkConfigDefault"):
 
     # Make sure the moveit service is up and running
     rospy.logwarn("Waiting for MoveIt! to load")
@@ -37,7 +41,7 @@ class ArmMoveIt:
 
     ## Instantiate a MoveGroupCommander object.  This object is an interface
     ## to one group of joints.  In this case the group is the joints in the left
-    ## arm.  This interface can be used to plan and execute motions on the left
+    ## arm.  This interface can be used to plan and execute   motions on the left
     ## arm.
     self.group = [moveit_commander.MoveGroupCommander("arm")]
 
@@ -52,6 +56,11 @@ class ArmMoveIt:
     # NOTE: order that moveit currently is configured
     # ['right_shoulder_pan_joint', 'right_shoulder_lift_joint', 'right_elbow_joint', 'right_wrist_1_joint', 'right_wrist_2_joint', 'right_wrist_3_joint']
     self.continuous_joints_list = [0,3,4,5] # joints that are continous
+    topic = 'visualization_marker_array'
+    self.publisher = rospy.Publisher(topic, MarkerArray)
+    rospy.sleep(1)
+    self.markerArray = MarkerArray()
+    
 
   def get_IK(self, newPose, root = None):
     ## from a defined newPose (geometry_msgs.msg.Pose()), retunr its correspondent joint angle(list)
@@ -85,23 +94,6 @@ class ArmMoveIt:
     except rospy.ServiceException, e:
       print "Service call failed: %s"%e
 
-  
-  def plan_targetInput(self, target, joint_flag):
-    '''Generic target planner that what type is specified'''
-    try:
-      if (joint_flag):
-        self.group[0].set_joint_value_target(self._simplify_joints(target))
-      else:
-        self.group[0].set_pose_target(target)
-
-      self.group[0].set_planner_id(self.planner)
-      planAns=self.group[0].plan()
-      return planAns
-    except:
-      print 'No plan found, see the moveit terminal for the error'
-      print("Unexpected error:", sys.exc_info()[0])
-      return None
-
 
   def set_robot_state_pose(self, traj):
     '''Gets the current robot state pose and sets it to the joint pose'''
@@ -133,9 +125,7 @@ class ArmMoveIt:
     return angle
 
   def _simplify_joints(self, joint_dict):
-    # Helper function to convert a dictionary of joint values
-    print "entered"
-    print joint_dict
+
     if isinstance(joint_dict, dict):
       simplified_joints = dict()
       for joint in joint_dict:
@@ -155,7 +145,6 @@ class ArmMoveIt:
           simplified_joints.append(self._simplify_angle(a))
         else:
           simplified_joints.append(a)
-    print simplified_joints
     return simplified_joints
 
 #   '''Older functions - left for backwards compatibility'''
@@ -164,8 +153,6 @@ class ArmMoveIt:
     ## input: target joint angles (list) of the robot
     ## output: plan from current joint angles to the target one
     try:
-      print target_joint
-      print self._simplify_joints(target_joint)
       self.group[0].set_joint_value_target(self._simplify_joints(target_joint))
       self.group[0].set_planner_id(self.planner)
       planAns=self.group[0].plan()
@@ -175,131 +162,140 @@ class ArmMoveIt:
       print("Unexpected error:", sys.exc_info()[0])
       return None
 
-  def plan_poseTargetInput(self,target_pose):
-    ## input: tart pose (geometry_msgs.msg.Pose())
-    ## output: plan from current  pose to the target one
-    try:
-      self.group[0].set_pose_target(target_pose)
-      self.group[0].set_planner_id(self.planner)
-      planAns=self.group[0].plan()
-      return planAns
-    except:
-      print 'No plan found, see the moveit terminal for the error'
-      print("Unexpected error:", sys.exc_info()[0])
-      return None
- 
-
   
-def ask_position(arm,tarPose):
-  #Ask the user the values of the target position
-   while True:
-    try:   
-      inputPosition=input(""" \n Target position coord. (format: x,y,z or write -1 to take the robot current position ): """)      
-    
-      if inputPosition == -1:
-        inputPosition=tarPose.position  
-        return inputPosition
+  def ask_position(arm,tarPose):
+    #Ask the user the values of the target position
+     while True:
+      try:   
+        inputPosition=input(""" \n Target position coord. (format: x,y,z or write -1 to take the robot current position ): """)      
       
-    except (ValueError,IOError,NameError):
-      print("\n Please, enter the coordinate in the following format: x,y,z ")
-      continue
-    else:          
-      if len(list(inputPosition)) == 3:
-        poseTmp= geometry_msgs.msg.Pose()
-        poseTmp.position.x=inputPosition[0]
-        poseTmp.position.y=inputPosition[1]
-        poseTmp.position.z=inputPosition[2]
-        return poseTmp.position
-      else:
+        if inputPosition == -1:
+          inputPosition=tarPose.position  
+          return inputPosition
+        
+      except (ValueError,IOError,NameError):
         print("\n Please, enter the coordinate in the following format: x,y,z ")
         continue
-      
+      else:          
+        if len(list(inputPosition)) == 3:
+          poseTmp= geometry_msgs.msg.Pose()
+          poseTmp.position.x=inputPosition[0]
+          poseTmp.position.y=inputPosition[1]
+          poseTmp.position.z=inputPosition[2]
+          return poseTmp.position
+        else:
+          print("\n Please, enter the coordinate in the following format: x,y,z ")
+          continue
         
-def ask_orientation(arm,tarPose):
-  # Ask the user the values of the target quaternion
-  while True:
-    try:   
-      inputQuat=input(""" \n Target quaternion coordi. (format: qx,qy,qz,qw or write -1 to take the robot current quaternion ):""")
-      
-      if inputQuat == -1:
-        inputQuat=arm.group[0].get_current_pose().pose.orientation                   
-        return  inputQuat
+          
+  def ask_orientation(arm,tarPose):
+    # Ask the user the values of the target quaternion
+    while True:
+      try:   
+        inputQuat=input(""" \n Target quaternion coordi. (format: qx,qy,qz,qw or write -1 to take the robot current quaternion ):""")
         
-    except (ValueError,IOError,NameError):
-      print("\n Please, enter the coordinate in the following format: qx,qy,qz,qw ")
-      continue
-    else:
-      if len(list(inputQuat)) == 4:
-        poseTmp= geometry_msgs.msg.Pose()
-        poseTmp.orientation.x=inputQuat[0]
-        poseTmp.orientation.y=inputQuat[1]
-        poseTmp.orientation.z=inputQuat[2]
-        poseTmp.orientation.w=inputQuat[3]
-        return poseTmp.orientation    
-      else:
+        if inputQuat == -1:
+          inputQuat=arm.group[0].get_current_pose().pose.orientation                   
+          return  inputQuat
+          
+      except (ValueError,IOError,NameError):
         print("\n Please, enter the coordinate in the following format: qx,qy,qz,qw ")
+        continue
+      else:
+        if len(list(inputQuat)) == 4:
+          poseTmp= geometry_msgs.msg.Pose()
+          poseTmp.orientation.x=inputQuat[0]
+          poseTmp.orientation.y=inputQuat[1]
+          poseTmp.orientation.z=inputQuat[2]
+          poseTmp.orientation.w=inputQuat[3]
+          return poseTmp.orientation    
+        else:
+          print("\n Please, enter the coordinate in the following format: qx,qy,qz,qw ")
 
-def ask_angle():
-  return input("Angle?")
+  def ask_angle(self):
+    return input("Angle?")
 
-def calc_orientation(angle):
-  poseTmp= geometry_msgs.msg.Pose()
-  poseTmp.orientation.x=0
-  poseTmp.orientation.y=0
-  poseTmp.orientation.z = -radians(angle+90)
-  poseTmp.orientation.w= 1
-  # inputQuat=arm.group[0].get_current_pose().pose.orientation                   
-  return  poseTmp.orientation                
-  
-#   return poseTmp.position
-# def calculate_mov(angle):
-#   radius = 0.175
-#   rad = radians(angle)
-#   x = 1.175 + radius*(sin(rad))
-#   y = 0.2+ radius*(cos(rad))
-#   z = 1.2
-#   poseTmp= geometry_msgs.msg.Pose()
-#   poseTmp.position.x=x
-#   poseTmp.position.y=y
-#   poseTmp.position.z=z
-  
-#   return poseTmp.position
-def auto_circle(num_points,arm):
-  jump = (35/num_points)/2
-  tarPose = geometry_msgs.msg.Pose()
-  for angle in range(-75,-40,jump):
-      tarPose.position = calc_mov(angle)
-      tarPose.orientation = calc_orientation(angle)
-      jointTarg = arm.get_IK(tarPose)
-      planTraj = arm.plan_jointTargetInput(jointTarg)
-      if(planTraj!=None):
-        arm.group[0].execute(planTraj)
-        print "going to angle " + str(angle)
-        time.sleep(5)
+  def publish_point(self, x,y,z):
+      marker = Marker()
+      marker.type = marker.SPHERE
+      marker.action = marker.ADD
+      marker.scale.x = 0.05
+      marker.scale.y = 0.05
+      marker.scale.z = 0.05
+      marker.color.a = 1.0
+      marker.color.r = 1.0
+      marker.pose.orientation.w = 1.0
+      marker.pose.position.x = x
+      marker.pose.position.y = y
+      marker.pose.position.z = z
+      marker.header.frame_id = "/base_link"
+      # print self.marker
+      # self.markerArray = MarkerArray()
+      self.markerArray.markers.append(marker)
 
-  for angle in range(-130,-105,jump):
-      tarPose.position = calc_mov(angle)
-      tarPose.orientation = calc_orientation(angle)
-      jointTarg = arm.get_IK(tarPose)
-      planTraj = arm.plan_jointTargetInput(jointTarg)
-      if(planTraj!=None):
-        arm.group[0].execute(planTraj)
-        print "going to angle " + str(angle)
-        time.sleep(5)
+      id = 0
+      for m in self.markerArray.markers:
+        m.id = id
+        id += 1
+      # print self.markerArray
+      self.publisher.publish(self.markerArray)
 
+  def calc_orientation(self,angle):
+    quaternion = tf.transformations.quaternion_from_euler(0, 0, -radians(angle+90))
+    pose= geometry_msgs.msg.Pose()
+    pose.orientation.x = quaternion[0]
+    pose.orientation.y = quaternion[1]
+    pose.orientation.z = quaternion[2]
+    pose.orientation.w = quaternion[3]              
+    return  pose.orientation                
 
-def calc_mov(angle):
-  radius = 0.5
-  rad = radians(angle)
-  x = radius*(sin(rad))+1.3
-  y = radius*(cos(rad))
-  z = 1.2
-  poseTmp= geometry_msgs.msg.Pose()
-  poseTmp.position.x=x
-  poseTmp.position.y=y
-  poseTmp.position.z=z
-  
-  return poseTmp.position
+  def calc_mov(self,angle,radius,x_back_limit):
+    rad = radians(angle)
+    x = radius*(sin(rad))+radius+x_back_limit
+    y = 0.8*radius*(cos(rad))
+    z = 1.25
+    poseTmp= geometry_msgs.msg.Pose()
+    poseTmp.position.x=x
+    poseTmp.position.y=y
+    poseTmp.position.z=z
+    
+    return poseTmp.position
+
+  def auto_circle(self,num_points,rad_outer,rad_inner):
+    
+    x_back_limit = 0.85
+    x_forward_limit = 1.2
+    # y_limit = 0.3
+
+    self.publish_point(x_back_limit+rad_outer,0,1.2 )
+    jump = 30 #hard coded for now
+    tarPose = geometry_msgs.msg.Pose()
+
+    for angle in range(-150,-29,jump):
+        tarPose.position = self.calc_mov(angle,rad_outer,x_back_limit)
+        tarPose.orientation = self.calc_orientation(angle)
+        self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
+        print '\n The target coordinate is: %s \n' %tarPose 
+        jointTarg = self.get_IK(tarPose)
+        planTraj = self.plan_jointTargetInput(jointTarg)
+        if(planTraj!=None):
+          print "going to angle " + str(angle)   
+          self.group[0].execute(planTraj)
+          # time.sleep(5)
+          # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
+    x_back_limit+=(rad_outer-rad_inner)
+    for angle in range(-150,-29,jump):
+        tarPose.position = self.calc_mov(angle,rad_inner,x_back_limit)
+        tarPose.orientation = self.calc_orientation(angle)
+        self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
+        print '\n The target coordinate is: %s \n' %tarPose
+        jointTarg = self.get_IK(tarPose)
+        planTraj = self.plan_jointTargetInput(jointTarg)
+        if(planTraj!=None): 
+          print "going to angle " + str(angle)   
+          self.group[0].execute(planTraj)
+          time.sleep(5)
+          # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
 
 def main():
   arm = ArmMoveIt()
@@ -312,14 +308,13 @@ def main():
     
     ##   Assigned tarPose the current Pose of the robot 
     tarPose = arm.group[0].get_current_pose().pose
-  
-    auto_circle(4,arm)
+    arm.auto_circle(4,0.4,0.2)
     ## ask input from user (COMMENT IF NOT USE AND WANT TO ASSIGN MANUAL VALUE IN CODE)    
-    # angle = ask_angle()
-    # tarPose.position = calc_mov(angle) 
-    # tarPose.orientation = calc_orientation(angle)    
+    # angle = arm.ask_angle()
+    # tarPose.position = arm.calc_mov(angle,radius) 
+    # tarPose.orientation = arm.calc_orientation(angle)    
                   
-    print '\n The target coordinate is: %s \n' %tarPose     
+    # print '\n The target coordinate is: %s \n' %tarPose     
     
     ## IK for target position  
     # jointTarg = arm.get_IK(tarPose)
