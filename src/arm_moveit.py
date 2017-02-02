@@ -19,7 +19,7 @@ from math import pi, floor, ceil, fabs, sin, cos, radians
 class ArmMoveIt:
 
   def __init__(self, planning_frame='linear_actuator_link', default_planner="RRTConnectkConfigDefault"):
-
+    # r = requests.get("http://10.5.5.9/gp/gpControl/command/mode?p=1")
     # Make sure the moveit service is up and running
     rospy.logwarn("Waiting for MoveIt! to load")
     try:
@@ -60,6 +60,8 @@ class ArmMoveIt:
     self.publisher = rospy.Publisher(topic, MarkerArray)
     rospy.sleep(1)
     self.markerArray = MarkerArray()
+
+
     
 
   def get_IK(self, newPose, root = None):
@@ -252,7 +254,7 @@ class ArmMoveIt:
   def calc_mov(self,angle,radius,x_back_limit):
     rad = radians(angle)
     x = radius*(sin(rad))+radius+x_back_limit
-    y = 0.8*radius*(cos(rad))
+    y = 1.0*radius*(cos(rad))
     z = 1.25
     poseTmp= geometry_msgs.msg.Pose()
     poseTmp.position.x=x
@@ -281,7 +283,7 @@ class ArmMoveIt:
         if(planTraj!=None):
           print "going to angle " + str(angle)   
           self.group[0].execute(planTraj)
-          # time.sleep(5)
+          time.sleep(3)
           # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
     x_back_limit+=(rad_outer-rad_inner)
     for angle in range(-150,-29,jump):
@@ -294,7 +296,7 @@ class ArmMoveIt:
         if(planTraj!=None): 
           print "going to angle " + str(angle)   
           self.group[0].execute(planTraj)
-          time.sleep(5)
+          time.sleep(3)
           # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
 
 def main():
@@ -308,7 +310,7 @@ def main():
     
     ##   Assigned tarPose the current Pose of the robot 
     tarPose = arm.group[0].get_current_pose().pose
-    arm.auto_circle(4,0.4,0.2)
+    arm.auto_circle(4,0.37,0.2)
     ## ask input from user (COMMENT IF NOT USE AND WANT TO ASSIGN MANUAL VALUE IN CODE)    
     # angle = arm.ask_angle()
     # tarPose.position = arm.calc_mov(angle,radius) 
