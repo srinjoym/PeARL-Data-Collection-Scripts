@@ -15,30 +15,39 @@ def simple_move():
 
     rospy.init_node('simple_move')
 
-    client = actionlib.SimpleActionClient("move_base_navi", MoveBaseAction)
+    # client = actionlib.SimpleActionClient("move_base_navi", MoveBaseAction)
 
-    # publisher = rospy.Publisher('move_base_navi/goal', MoveBaseActionGoal)
-
-    goal = MoveBaseGoal()
+    publisher = rospy.Publisher("/move_base_navi/goal", MoveBaseActionGoal,queue_size=10)
+    rospy.sleep(1)
+    action_goal = MoveBaseActionGoal()
+    action_goal.header.frame_id = 'odom'
     # Waits until the action server has started up and started
     # listening for goals.
 
-    goal.target_pose.header.frame_id = "base_link"
-    goal.target_pose.pose.position.x = 1.0
-    goal.target_pose.pose.orientation.w = 1.0
-    goal.target_pose.header.stamp = rospy.Time.now()
+    action_goal.goal.target_pose.header.frame_id = 'base_link'
+    action_goal.goal.target_pose.pose.position.x = 1.0
+    action_goal.goal.target_pose.pose.position.y = 0.0
+    action_goal.goal.target_pose.pose.position.z = 0.0
+    action_goal.goal.target_pose.pose.orientation.x = 0.0
+    action_goal.goal.target_pose.pose.orientation.y = 0.0
+    action_goal.goal.target_pose.pose.orientation.z = 0.0
+    action_goal.goal.target_pose.pose.orientation.w = 1.0
+    action_goal.goal.target_pose.header.stamp = rospy.Time.now()
     print "created goal"
     
-    client.wait_for_server(rospy.Duration(5))
-    print "finished waiting for server"
-    # Sends the goal to the action server.
-    client.send_goal(goal)
-    print "sent goal"
-    # Waits for the server to finish performing the action.
-    client.wait_for_result()
-    print "finished waiing for result"
-    # Prints out the result of executing the action
-    return client.get_result()  # A FibonacciResult
+    # client.wait_for_server(rospy.Duration(5))
+    # print "finished waiting for server"
+    # # Sends the goal to the action server.
+    # client.send_goal(goal)
+    # print "sent goal"
+    # # Waits for the server to finish performing the action.
+    # client.wait_for_result()
+    # print "finished waiing for result"
+    # # Prints out the result of executing the action
+    # return client.get_result()  # A FibonacciResult
+    print action_goal
+    publisher.publish(action_goal)
+    print "published"
 
 if __name__ == '__main__':
     try:
