@@ -273,7 +273,8 @@ class ArmMoveIt:
     jump = 30 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
 
-    for angle in range(-150,-29,jump):
+    # for angle in range(-150,-29,jump):
+    for angle in range(-130,-49,jump):
         tarPose.position = self.calc_mov(angle,rad_outer,x_back_limit)
         tarPose.orientation = self.calc_orientation(angle)
         self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
