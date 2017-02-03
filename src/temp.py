@@ -18,7 +18,7 @@ from math import pi, floor, ceil, fabs, sin, cos, radians
 
 class ArmMoveIt:
 
-  def __init__(self, planning_frame='linear_actuator_link', default_planner="RRTConnectkConfigDefault"):
+  def __init__(self, planning_frame='base_link', default_planner="RRTConnectkConfigDefault"):
     # r = requests.get("http://10.5.5.9/gp/gpControl/command/mode?p=1")
     # Make sure the moveit service is up and running
     rospy.logwarn("Waiting for MoveIt! to load")
@@ -71,7 +71,7 @@ class ArmMoveIt:
 
     wkPose = geometry_msgs.msg.PoseStamped()
     if root is None:
-      wkPose.header.frame_id = 'linear_actuator_link' # name:odom
+      wkPose.header.frame_id = 'base_link' # name:odom
     else:
       wkPose.header.frame_id = root
 
@@ -230,7 +230,7 @@ class ArmMoveIt:
       marker.pose.position.x = x
       marker.pose.position.y = y
       marker.pose.position.z = z
-      marker.header.frame_id = "/linear_actuator_link"
+      marker.header.frame_id = "/base_link"
       # print self.marker
       # self.markerArray = MarkerArray()
       self.markerArray.markers.append(marker)
@@ -255,7 +255,7 @@ class ArmMoveIt:
     rad = radians(angle)
     x = radius*(sin(rad))+radius+x_back_limit
     y = 1.0*radius*(cos(rad))
-    z = 0.2
+    z = 1.25
     poseTmp= geometry_msgs.msg.Pose()
     poseTmp.position.x=x
     poseTmp.position.y=y
@@ -265,7 +265,7 @@ class ArmMoveIt:
 
   def auto_circle(self,num_points,rad_outer,rad_inner):
     
-    x_back_limit = 0.85-0.23
+    x_back_limit = 0.85
     x_forward_limit = 1.2
     # y_limit = 0.3
 
@@ -286,7 +286,7 @@ class ArmMoveIt:
           time.sleep(3)
           # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
     x_back_limit+=(rad_outer-rad_inner)
-    for angle in range(-135,-29,jump):
+    for angle in range(-150,-29,jump):
         tarPose.position = self.calc_mov(angle,rad_inner,x_back_limit)
         tarPose.orientation = self.calc_orientation(angle)
         self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
@@ -310,7 +310,7 @@ def main():
     
     ##   Assigned tarPose the current Pose of the robot 
     tarPose = arm.group[0].get_current_pose().pose
-    arm.auto_circle(4,0.42,0.2)
+    arm.auto_circle(4,0.37,0.2)
     ## ask input from user (COMMENT IF NOT USE AND WANT TO ASSIGN MANUAL VALUE IN CODE)    
     # angle = arm.ask_angle()
     # tarPose.position = arm.calc_mov(angle,radius) 
