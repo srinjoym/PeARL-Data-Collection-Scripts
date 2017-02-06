@@ -25,27 +25,21 @@ def simple_move():
     # listening for goals.
 
     action_goal.goal.target_pose.header.frame_id = 'base_link'
-    action_goal.goal.target_pose.pose.position.x = 1.0
-    action_goal.goal.target_pose.pose.position.y = 0.0
-    action_goal.goal.target_pose.pose.position.z = 0.0
-    action_goal.goal.target_pose.pose.orientation.x = 0.0
-    action_goal.goal.target_pose.pose.orientation.y = 0.0
-    action_goal.goal.target_pose.pose.orientation.z = 0.0
+    action_goal.goal.target_pose.pose.position.y = -1.0
     action_goal.goal.target_pose.pose.orientation.w = 1.0
     action_goal.goal.target_pose.header.stamp = rospy.Time.now()
-    print "created goal"
-    
-    # client.wait_for_server(rospy.Duration(5))
-    # print "finished waiting for server"
-    # # Sends the goal to the action server.
-    # client.send_goal(goal)
-    # print "sent goal"
-    # # Waits for the server to finish performing the action.
-    # client.wait_for_result()
-    # print "finished waiing for result"
-    # # Prints out the result of executing the action
-    # return client.get_result()  # A FibonacciResult
-    print action_goal
+    publisher.publish(action_goal)
+    rospy.sleep(15)
+    action_goal.goal.target_pose.pose.position.x = 1.0
+    action_goal.goal.target_pose.pose.position.y = 0.0
+    action_goal.goal.target_pose.pose.orientation.w = 1.0
+    action_goal.goal.target_pose.header.stamp = rospy.Time.now()
+    publisher.publish(action_goal)
+    rospy.sleep(15)
+    action_goal.goal.target_pose.pose.position.x = 0.0
+    action_goal.goal.target_pose.pose.position.y = 1.0
+    action_goal.goal.target_pose.pose.orientation.w = 1.0
+    action_goal.goal.target_pose.header.stamp = rospy.Time.now()
     publisher.publish(action_goal)
     print "published"
 

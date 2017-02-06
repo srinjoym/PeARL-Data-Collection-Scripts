@@ -96,25 +96,6 @@ class ArmMoveIt:
     except rospy.ServiceException, e:
       print "Service call failed: %s"%e
 
-
-  def set_robot_state_pose(self, traj):
-    '''Gets the current robot state pose and sets it to the joint pose'''
-    cur_robot_state = self.robot.get_current_state()
-    last_point = traj.points[-1].positions
-    # convert the joints to array
-    joints = [x for x in cur_robot_state.joint_state.position]
-    for i in xrange(len(traj.joint_names)):
-      # Find index of joint
-      joint_name = traj.joint_names[i]
-      idx = cur_robot_state.joint_state.name.index(joint_name)
-      joints[idx] = last_point[i]
-
-    # Set full joint tuple now
-    cur_robot_state.joint_state.position = joints
-
-    return cur_robot_state
-
-
   def _simplify_angle(self, angle):
     # Very simple function that makes sure the angles are between -pi and pi
     if angle > pi:
@@ -189,31 +170,6 @@ class ArmMoveIt:
           print("\n Please, enter the coordinate in the following format: x,y,z ")
           continue
         
-          
-  def ask_orientation(arm,tarPose):
-    # Ask the user the values of the target quaternion
-    while True:
-      try:   
-        inputQuat=input(""" \n Target quaternion coordi. (format: qx,qy,qz,qw or write -1 to take the robot current quaternion ):""")
-        
-        if inputQuat == -1:
-          inputQuat=arm.group[0].get_current_pose().pose.orientation                   
-          return  inputQuat
-          
-      except (ValueError,IOError,NameError):
-        print("\n Please, enter the coordinate in the following format: qx,qy,qz,qw ")
-        continue
-      else:
-        if len(list(inputQuat)) == 4:
-          poseTmp= geometry_msgs.msg.Pose()
-          poseTmp.orientation.x=inputQuat[0]
-          poseTmp.orientation.y=inputQuat[1]
-          poseTmp.orientation.z=inputQuat[2]
-          poseTmp.orientation.w=inputQuat[3]
-          return poseTmp.orientation    
-        else:
-          print("\n Please, enter the coordinate in the following format: qx,qy,qz,qw ")
-
   def ask_angle(self):
     return input("Angle?")
 
@@ -243,7 +199,7 @@ class ArmMoveIt:
       self.publisher.publish(self.markerArray)
 
   def calc_orientation(self,angle):
-    quaternion = tf.transformations.quaternion_from_euler(0, 0, -radians(angle+90))
+    quaternion = tf.transformations.quaternion_from_euler(0, radians(90), -radians(angle+90))
     pose= geometry_msgs.msg.Pose()
     pose.orientation.x = quaternion[0]
     pose.orientation.y = quaternion[1]
@@ -251,11 +207,11 @@ class ArmMoveIt:
     pose.orientation.w = quaternion[3]              
     return  pose.orientation                
 
-  def calc_mov(self,angle,radius,x_back_limit):
+  def calc_mov(self,angle,radius,center):
     rad = radians(angle)
-    x = radius*(sin(rad))+radius+x_back_limit
+    x = center+radius*(sin(rad))
     y = 1.0*radius*(cos(rad))
-    z = 0.2
+    z = -0.15
     poseTmp= geometry_msgs.msg.Pose()
     poseTmp.position.x=x
     poseTmp.position.y=y
@@ -263,19 +219,18 @@ class ArmMoveIt:
     
     return poseTmp.position
 
-  def auto_circle(self,num_points,rad_outer,rad_inner):
+  def auto_circle(self,rad_outer,rad_inner,center):
     
-    x_back_limit = 0.85-0.23
+    # x_back_limit = 0.62
     x_forward_limit = 1.2
     # y_limit = 0.3
 
-    self.publish_point(x_back_limit+rad_outer,0,1.2 )
+    self.publish_point(center,0,-0.15 )
     jump = 30 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
 
-    # for angle in range(-150,-29,jump):
-    for angle in range(-130,-49,jump):
-        tarPose.position = self.calc_mov(angle,rad_outer,x_back_limit)
+    for angle in range(-180,-9,jump):
+        tarPose.position = self.calc_mov(angle,rad_outer,center)
         tarPose.orientation = self.calc_orientation(angle)
         self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
         print '\n The target coordinate is: %s \n' %tarPose 
@@ -287,8 +242,8 @@ class ArmMoveIt:
           time.sleep(3)
           # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
     x_back_limit+=(rad_outer-rad_inner)
-    for angle in range(-135,-29,jump):
-        tarPose.position = self.calc_mov(angle,rad_inner,x_back_limit)
+    for angle in range(-150,-29,jump):
+        tarPose.position = self.calc_mov(angle,rad_inner,center)
         tarPose.orientation = self.calc_orientation(angle)
         self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
         print '\n The target coordinate is: %s \n' %tarPose
@@ -311,7 +266,7 @@ def main():
     
     ##   Assigned tarPose the current Pose of the robot 
     tarPose = arm.group[0].get_current_pose().pose
-    arm.auto_circle(4,0.42,0.2)
+    arm.auto_circle(0.6,0.2,0.7)
     ## ask input from user (COMMENT IF NOT USE AND WANT TO ASSIGN MANUAL VALUE IN CODE)    
     # angle = arm.ask_angle()
     # tarPose.position = arm.calc_mov(angle,radius) 
