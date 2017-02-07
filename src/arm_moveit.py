@@ -12,6 +12,7 @@ import wpi_jaco_msgs.srv
 import time
 import requests
 import tf
+from move_base import *
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
 from math import pi, floor, ceil, fabs, sin, cos, radians
@@ -60,7 +61,7 @@ class ArmMoveIt:
     self.publisher = rospy.Publisher(topic, MarkerArray)
     rospy.sleep(1)
     self.markerArray = MarkerArray()
-
+    self.move_base = MoveBase()
 
     
 
@@ -219,18 +220,12 @@ class ArmMoveIt:
     
     return poseTmp.position
 
-  def auto_circle(self,rad_outer,rad_inner,center):
-    
-    # x_back_limit = 0.62
-    x_forward_limit = 1.2
-    # y_limit = 0.3
+  def execute_circle(self,jump,radius,center):
 
-    self.publish_point(center,0,-0.15 )
-    jump = 30 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
 
-    for angle in range(-180,-9,jump):
-        tarPose.position = self.calc_mov(angle,rad_outer,center)
+    for angle in range(-180,1,jump):
+        tarPose.position = self.calc_mov(angle,radius,center)
         tarPose.orientation = self.calc_orientation(angle)
         self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
         print '\n The target coordinate is: %s \n' %tarPose 
@@ -239,21 +234,27 @@ class ArmMoveIt:
         if(planTraj!=None):
           print "going to angle " + str(angle)   
           self.group[0].execute(planTraj)
-          time.sleep(3)
+          time.sleep(0)
           # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
-    x_back_limit+=(rad_outer-rad_inner)
-    for angle in range(-150,-29,jump):
-        tarPose.position = self.calc_mov(angle,rad_inner,center)
-        tarPose.orientation = self.calc_orientation(angle)
-        self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
-        print '\n The target coordinate is: %s \n' %tarPose
-        jointTarg = self.get_IK(tarPose)
-        planTraj = self.plan_jointTargetInput(jointTarg)
-        if(planTraj!=None): 
-          print "going to angle " + str(angle)   
-          self.group[0].execute(planTraj)
-          time.sleep(3)
-          # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
+
+  def auto_circle(self,rad_outer,rad_inner,center):
+    
+    # x_back_limit = 0.62
+    x_forward_limit = 1.2
+    # y_limit = 0.3
+
+    self.publish_point(center,0,-0.15 )
+    
+    jump = 30 #hard coded for now
+    tarPose = geometry_msgs.msg.Pose()
+
+    self.execute_circle(jump,rad_outer,center)
+    self.execute_circle(jump,rad_inner,center)
+    self.move_base.simple_move(center,1)
+    self.execute_circle(jump,rad_outer,center)
+    self.execute_circle(jump,rad_inner,center)
+
+    
 
 def main():
   arm = ArmMoveIt()
@@ -266,31 +267,7 @@ def main():
     
     ##   Assigned tarPose the current Pose of the robot 
     tarPose = arm.group[0].get_current_pose().pose
-    arm.auto_circle(0.6,0.2,0.7)
-    ## ask input from user (COMMENT IF NOT USE AND WANT TO ASSIGN MANUAL VALUE IN CODE)    
-    # angle = arm.ask_angle()
-    # tarPose.position = arm.calc_mov(angle,radius) 
-    # tarPose.orientation = arm.calc_orientation(angle)    
-                  
-    # print '\n The target coordinate is: %s \n' %tarPose     
-    
-    ## IK for target position  
-    # jointTarg = arm.get_IK(tarPose)
-    # print 'IK calculation step:DONE' 
-    # print jointTarg
-
-    # ## planning with joint target from IK 
-    # planTraj =  arm.plan_jointTargetInput(jointTarg)
-    # print 'Planning step with target joint angles:DONE' 
-    # if(planTraj != None):
-    #    print 'Execution of the plan' 
-    #    arm.group[0].execute(planTraj)
-    ## planning with pose target
-    # print 'Planning step with target pose'   
-    # planTraj = arm.plan_poseTargetInput(tarPose)
-      
-    ## execution of the movement   
-   
+    arm.auto_circle(0.6,0.2,0.7)   
   
 if __name__ == '__main__':
   ## First initialize moveit_commander and rospy.
