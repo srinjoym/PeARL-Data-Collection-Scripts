@@ -15,7 +15,7 @@ import tf
 from move_base import *
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
-from math import pi, floor, ceil, fabs, sin, cos, radians
+from math import pi, floor, ceil, fabs, sin, cos, radians, atan
 
 class ArmMoveIt:
 
@@ -199,8 +199,9 @@ class ArmMoveIt:
       # print self.markerArray
       self.publisher.publish(self.markerArray)
 
-  def calc_orientation(self,angle):
-    quaternion = tf.transformations.quaternion_from_euler(0, radians(90), -radians(angle+90))
+  def calc_orientation(self,angle,radius,height,center):
+    tilt_angle = atan((height-center[2]/radius))
+    quaternion = tf.transformations.quaternion_from_euler(0, radians(90)+tilt_angle, -radians(angle+90))
     pose= geometry_msgs.msg.Pose()
     pose.orientation.x = quaternion[0]
     pose.orientation.y = quaternion[1]
@@ -208,11 +209,11 @@ class ArmMoveIt:
     pose.orientation.w = quaternion[3]              
     return  pose.orientation                
 
-  def calc_mov(self,angle,radius,center):
+  def calc_mov(self,angle,radius,height,center):
     rad = radians(angle)
-    x = center+radius*(sin(rad))
+    x = center[0]+radius*(sin(rad))
     y = 1.0*radius*(cos(rad))
-    z = -0.15
+    z = height
     poseTmp= geometry_msgs.msg.Pose()
     poseTmp.position.x=x
     poseTmp.position.y=y
@@ -220,13 +221,13 @@ class ArmMoveIt:
     
     return poseTmp.position
 
-  def execute_circle(self,jump,radius,center):
+  def execute_circle(self,jump,radius,height,center):
 
     tarPose = geometry_msgs.msg.Pose()
 
     for angle in range(-180,1,jump):
-        tarPose.position = self.calc_mov(angle,radius,center)
-        tarPose.orientation = self.calc_orientation(angle)
+        tarPose.position = self.calc_mov(angle,radius,height,center)
+        tarPose.orientation = self.calc_orientation(angle,radius,height,center)
         self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
         print '\n The target coordinate is: %s \n' %tarPose 
         jointTarg = self.get_IK(tarPose)
@@ -243,16 +244,16 @@ class ArmMoveIt:
     x_forward_limit = 1.2
     # y_limit = 0.3
 
-    self.publish_point(center,0,-0.15 )
+    self.publish_point(center[0],center[1],center[2] )
     
     jump = 30 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
 
-    self.execute_circle(jump,rad_outer,center)
-    self.execute_circle(jump,rad_inner,center)
-    self.move_base.simple_move(center,1)
-    self.execute_circle(jump,rad_outer,center)
-    self.execute_circle(jump,rad_inner,center)
+    self.execute_circle(jump,rad_outer,0,center)
+    self.execute_circle(jump,rad_inner,0,center)
+    # self.move_base.simple_move(center,1)
+    # self.execute_circle(jump,rad_outer,center)
+    # self.execute_circle(jump,rad_inner,center)
 
     
 
@@ -267,7 +268,7 @@ def main():
     
     ##   Assigned tarPose the current Pose of the robot 
     tarPose = arm.group[0].get_current_pose().pose
-    arm.auto_circle(0.6,0.2,0.7)   
+    arm.auto_circle(0.6,0.2,[0.7,0,-0.15])   
   
 if __name__ == '__main__':
   ## First initialize moveit_commander and rospy.
