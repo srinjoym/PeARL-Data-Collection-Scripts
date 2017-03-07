@@ -12,6 +12,7 @@ import wpi_jaco_msgs.srv
 import time
 import requests
 import tf
+import tf_conversions
 from move_base import *
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
@@ -51,7 +52,8 @@ class ArmMoveIt:
 
     # Set the planning pose reference frame
     self.group[0].set_pose_reference_frame(planning_frame)
-
+    # print "tolerance:"
+    # print self.group[0].set_num_planning_attempts(5)
     # Set continuous joint names
     self.continuous_joints = ['shoulder_pan_joint','wrist_1_joint','wrist_2_joint','wrist_3_joint']
     # NOTE: order that moveit currently is configured
@@ -173,40 +175,45 @@ class ArmMoveIt:
         
   def ask_angle(self):
     return input("Angle?")
+  
+  def publish_point(self, pose):
+    marker = Marker()
+    marker.type = marker.ARROW
+    marker.action = marker.ADD
+    marker.scale.x = 0.15
+    marker.scale.y = 0.05
+    marker.scale.z = 0.05
+    marker.color.a = 1.0
+    marker.color.r = 1.0
+    marker.pose = pose
+    marker.header.frame_id = "/linear_actuator_link"
+    # print self.marker
+    #markerArray = MarkerArray()
+    self.markerArray.markers.append(marker)
 
-  def publish_point(self, x,y,z):
-      marker = Marker()
-      marker.type = marker.SPHERE
-      marker.action = marker.ADD
-      marker.scale.x = 0.05
-      marker.scale.y = 0.05
-      marker.scale.z = 0.05
-      marker.color.a = 1.0
-      marker.color.r = 1.0
-      marker.pose.orientation.w = 1.0
-      marker.pose.position.x = x
-      marker.pose.position.y = y
-      marker.pose.position.z = z
-      marker.header.frame_id = "/linear_actuator_link"
-      # print self.marker
-      # self.markerArray = MarkerArray()
-      self.markerArray.markers.append(marker)
+    id = 0
+    for m in self.markerArray.markers:
+      m.id = id
+      id += 1
+    # print self.markerArray
+    self.publisher.publish(self.markerArray)
 
-      id = 0
-      for m in self.markerArray.markers:
-        m.id = id
-        id += 1
-      # print self.markerArray
-      self.publisher.publish(self.markerArray)
+  
 
-  def calc_orientation(self,angle,radius,height,center):
+  def calc_orientation(self,angle,radius,height,center,rotation):
     tilt_angle = atan((height-center[2]/radius))
-    quaternion = tf.transformations.quaternion_from_euler(0, radians(90)+tilt_angle, -radians(angle+90))
+    print "tilt angle"
+    print tilt_angle
+    quaternion = tf.transformations.quaternion_from_euler(radians(rotation), radians(angle+90),radians(90)+tilt_angle,axes='szxy')
+    # ang_quaternion = tf.transformations.quaternion_from_euler(0, 0,-radians(15))
+
+    # quaternion = tf.transformations.quaternion_multiply(ba_quaternion,tf.transformations.quaternion_inverse(ang_quaternion))
+
     pose= geometry_msgs.msg.Pose()
     pose.orientation.x = quaternion[0]
     pose.orientation.y = quaternion[1]
     pose.orientation.z = quaternion[2]
-    pose.orientation.w = quaternion[3]              
+    pose.orientation.w = quaternion[3]  
     return  pose.orientation                
 
   def calc_mov(self,angle,radius,height,center):
@@ -226,41 +233,49 @@ class ArmMoveIt:
     tarPose = geometry_msgs.msg.Pose()
 
     for angle in range(-135,-46,jump):
+    # for angle in range(-135,-134,jump):
+      for rotation in range(-40,41,20):
+      # for rotation in range(0,1,20):
         tarPose.position = self.calc_mov(angle,radius,height,center)
-        tarPose.orientation = self.calc_orientation(angle,radius,height,center)
-        self.publish_point(tarPose.position.x,tarPose.position.y,tarPose.position.z)
+        tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation)
+        self.publish_point(tarPose)
+        print "Rotation ",rotation
         print "Angle: ", angle
         print "Radius: ", radius
         print "Height: ", height
         print "center: ", center
         print '\n The target coordinate is: %s \n' %tarPose
-	 
         jointTarg = self.get_IK(tarPose)
         planTraj = self.plan_jointTargetInput(jointTarg)
-	#if(input("Continue")==-1):
-        #  return
         if(planTraj!=None):
           print "going to angle " + str(angle)   
           self.group[0].execute(planTraj)
           time.sleep(0)
-          r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
+          # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
 
   def auto_circle(self,rad_outer,rad_inner,center):
     
     # x_back_limit = 0.62
     x_forward_limit = 1.2
     # y_limit = 0.3
-
-    self.publish_point(center[0],center[1],center[2] )
+    centerPose = geometry_msgs.msg.Pose()
+    centerPose.position.x = center[0]
+    centerPose.position.y = center[1]
+    centerPose.position.z = center[2]
+    self.publish_point(centerPose )
     #if(input("Continue")==-1):
     #	return
     jump = 22 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
 
+    self.execute_circle(jump,rad_outer,-0.2,center)
+    # self.execute_circle(jump,rad_inner,-0.2,center)
     self.execute_circle(jump,rad_outer,-0.15,center)
-    self.execute_circle(jump,rad_inner,-0.15,center)
+    # self.execute_circle(jump,rad_inner,-0.15,center)
     self.execute_circle(jump,rad_outer,0,center)
-    self.execute_circle(jump,rad_inner,0,center)
+    # self.execute_circle(jump,rad_inner,0,center)
+    self.execute_circle(jump,rad_outer,0.1,center)
+    # self.execute_circle(jump,rad_inner,0.1,center)
     # self.move_base.simple_move(center,1)
     # self.execute_circle(jump,rad_outer,center)
     # self.execute_circle(jump,rad_inner,center)
