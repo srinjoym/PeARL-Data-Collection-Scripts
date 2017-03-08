@@ -6,9 +6,11 @@ import moveit_commander
 import moveit_msgs.msg
 import moveit_msgs.srv
 import geometry_msgs.msg
-import std_msgs.msg
+from std_msgs.msg import *
 import wpi_jaco_msgs.msg
 import wpi_jaco_msgs.srv
+from control_msgs.msg import *
+from vector_msgs.msg import *
 import time
 import requests
 import tf
@@ -61,11 +63,35 @@ class ArmMoveIt:
     self.continuous_joints_list = [0,3,4,5] # joints that are continous
     topic = 'visualization_marker_array'
     self.publisher = rospy.Publisher(topic, MarkerArray)
-    rospy.sleep(1)
+    self.lin_act_controller = rospy.Publisher('/vector/linear_actuator_cmd', LinearActuatorCmd)
+    rospy.Subscriber('/linear_actuator_controller/state', JointTrajectoryControllerState, self.update_lin_act_callback)
+    rospy.sleep(2)
     self.markerArray = MarkerArray()
     self.move_base = MoveBase()
+    self.current_execution = 1
+    self.lin_act_state = control_msgs.msg.JointTrajectoryControllerState()
 
     
+
+  def update_lin_act_callback(self,msg):
+    self.lin_act_state = msg;
+  
+  def get_FK(self, root = 'base_link'):
+
+    rospy.wait_for_service('compute_fk')
+    compute_fk = rospy.ServiceProxy('compute_fk', moveit_msgs.srv.GetPositionFK)
+
+    header = std_msgs.msg.Header()
+    header.frame_id = root
+    header.stamp = rospy.Time.now()
+    fk_link_names = ['right_ee_link']
+    robot_state = self.robot.get_current_state()    
+    try:
+      reply=compute_fk(header,fk_link_names,robot_state)
+      return reply.pose_stamped
+
+    except rospy.ServiceException, e:
+      print "Service call failed: %s"%e
 
   def get_IK(self, newPose, root = None):
     ## from a defined newPose (geometry_msgs.msg.Pose()), retunr its correspondent joint angle(list)
@@ -176,35 +202,41 @@ class ArmMoveIt:
   def ask_angle(self):
     return input("Angle?")
   
-  def publish_point(self, pose):
+  def publish_point(self, pose,color):
     marker = Marker()
-    marker.type = marker.ARROW
+    marker.type = marker.CUBE
     marker.action = marker.ADD
-    marker.scale.x = 0.15
+    marker.scale.x = 0.05
     marker.scale.y = 0.05
     marker.scale.z = 0.05
     marker.color.a = 1.0
-    marker.color.r = 1.0
+    marker.color.r = color[0]
+    marker.color.g= color[1]
+    marker.color.b = color[2]
     marker.pose = pose
     marker.header.frame_id = "/linear_actuator_link"
     # print self.marker
     #markerArray = MarkerArray()
     self.markerArray.markers.append(marker)
-
+    print "marker array"
+    print self.markerArray
     id = 0
     for m in self.markerArray.markers:
       m.id = id
+      print str(id)+"\n"
+      print m.pose
       id += 1
     # print self.markerArray
     self.publisher.publish(self.markerArray)
 
+   
   
 
-  def calc_orientation(self,angle,radius,height,center,rotation):
-    tilt_angle = atan((height-center[2]/radius))
+  def calc_orientation(self,angle,radius,height,center,rotation,tilt_angle):
+    calc_tilt_angle = atan((height-center[2]/radius))
     print "tilt angle"
-    print tilt_angle
-    quaternion = tf.transformations.quaternion_from_euler(radians(rotation), radians(angle+90),radians(90)+tilt_angle,axes='szxy')
+    print calc_tilt_angle
+    quaternion = tf.transformations.quaternion_from_euler(radians(rotation), radians(angle+90),radians(90)+radians(tilt_angle)+calc_tilt_angle,axes='szxy')
     # ang_quaternion = tf.transformations.quaternion_from_euler(0, 0,-radians(15))
 
     # quaternion = tf.transformations.quaternion_multiply(ba_quaternion,tf.transformations.quaternion_inverse(ang_quaternion))
@@ -231,27 +263,42 @@ class ArmMoveIt:
   def execute_circle(self,jump,radius,height,center):
 
     tarPose = geometry_msgs.msg.Pose()
+    
+    
 
     for angle in range(-135,-46,jump):
-    # for angle in range(-135,-134,jump):
-      for rotation in range(-40,41,20):
-      # for rotation in range(0,1,20):
-        tarPose.position = self.calc_mov(angle,radius,height,center)
-        tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation)
-        self.publish_point(tarPose)
-        print "Rotation ",rotation
-        print "Angle: ", angle
-        print "Radius: ", radius
-        print "Height: ", height
-        print "center: ", center
-        print '\n The target coordinate is: %s \n' %tarPose
-        jointTarg = self.get_IK(tarPose)
-        planTraj = self.plan_jointTargetInput(jointTarg)
-        if(planTraj!=None):
-          print "going to angle " + str(angle)   
-          self.group[0].execute(planTraj)
-          time.sleep(0)
-          # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
+  # for angle in range(-135,-134,jump):
+      for tilt_angle in range(-10,11,10):
+        for rotation in range(0,1,10):
+        # for rotation in range(0,1,20):
+          
+          tarPose.position = self.calc_mov(angle,radius,height,center)
+          tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation,tilt_angle)
+          print "Rotation ",rotation
+          print "Angle: ", angle
+          print "Radius: ", radius
+          print "Height: ", height
+          print "center: ", center
+          print '\n The target coordinate is: %s \n' %tarPose
+          jointTarg = self.get_IK(tarPose)
+          planTraj = self.plan_jointTargetInput(jointTarg)
+          if(planTraj!=None):
+            self.publish_point(tarPose,[0,1,0])
+            print "going to angle " + str(angle)   
+            self.group[0].execute(planTraj)
+            with open('output.txt', 'a+') as f:
+              f.write("\nExecution %f"%int(self.current_execution)+"\n Height %f Radius %f Angle %f Rotation %f Tilt %f"%(height,radius,angle,rotation,tilt_angle)+"\nPosition\n"+str(self.get_FK()[0].pose.position)+"\nOrientation\n"+str(self.get_FK()[0].pose.orientation)+"\n")
+            # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
+          else:
+            self.publish_point(tarPose,[1,0,0])
+            with open('output.txt', 'a+') as f:
+              f.write("\nExecution %f"%int(self.current_execution)+"\n Height %f Radius %f Angle %f Rotation %f Tilt %f"%(height,radius,angle,rotation,tilt_angle)+"\nFailed!!\n")
+          
+          self.current_execution+=1
+
+    with open('output.txt', 'a+') as f:
+            f.write("\nFinished Circle\n")
+    return id
 
   def auto_circle(self,rad_outer,rad_inner,center):
     
@@ -262,25 +309,42 @@ class ArmMoveIt:
     centerPose.position.x = center[0]
     centerPose.position.y = center[1]
     centerPose.position.z = center[2]
-    self.publish_point(centerPose )
+    self.publish_point(centerPose,[0,0,1] )
     #if(input("Continue")==-1):
     #	return
     jump = 22 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
+    
+    self.execute_circle(jump,rad_outer,-0.45,center)
+    self.execute_circle(jump,rad_inner,-0.45,center)
+    self.execute_circle(jump,rad_outer,-0.35,center)
+    self.execute_circle(jump,rad_inner,-0.35,center)
+    self.execute_circle(jump,rad_outer,-0.25,center)
+    self.execute_circle(jump,rad_inner,-0.25,center)
+    # self.move_lin_act(self.lin_act_state-0.1)
+    # self.execute_circle(jump,rad_outer,-0.3,center)
+    # self.execute_circle(jump,rad_inner,-0.3,center)
 
-    self.execute_circle(jump,rad_outer,-0.2,center)
-    # self.execute_circle(jump,rad_inner,-0.2,center)
-    self.execute_circle(jump,rad_outer,-0.15,center)
-    # self.execute_circle(jump,rad_inner,-0.15,center)
-    self.execute_circle(jump,rad_outer,0,center)
-    # self.execute_circle(jump,rad_inner,0,center)
-    self.execute_circle(jump,rad_outer,0.1,center)
-    # self.execute_circle(jump,rad_inner,0.1,center)
+    
+
+    # self.execute_circle(jump,rad_outer,-0.3,center)
+    # self.execute_circle(jump,rad_inner,-0.3,center)
+    # self.execute_circle(jump,rad_outer,-0.3,center)
+    # self.execute_circle(jump,rad_inner,-0.3,center)
+    
+
     # self.move_base.simple_move(center,1)
     # self.execute_circle(jump,rad_outer,center)
     # self.execute_circle(jump,rad_inner,center)
 
-    
+  def move_lin_act(self,diff):
+    rospy.sleep(2)
+    current_state = self.lin_act_state.actual.positions[0]
+    desired_state = LinearActuatorCmd()
+
+    desired_state.desired_position_m = current_state+diff
+
+    self.lin_act_controller.publish(desired_state)
 
 def main():
   arm = ArmMoveIt()
@@ -290,13 +354,15 @@ def main():
   ## ask if integrate object scene from code or not
   
   if not rospy.is_shutdown():
-    
     #r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
 
     ##   Assigned tarPose the current Pose of the robot 
     #tarPose = arm.group[0].get_current_pose().pose
     #arm.auto_circle(0.57,0.35,[1.3,0,-0.35])
-    arm.auto_circle(0.75,0.55,[1.2,0,-0.35])
+    with open('output.txt', 'w+') as f:
+      pass
+
+    arm.auto_circle(0.75,0.55,[1.1,0,-0.35])
        
   
 if __name__ == '__main__':
