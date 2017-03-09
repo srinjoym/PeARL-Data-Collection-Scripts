@@ -288,12 +288,12 @@ class ArmMoveIt:
             self.group[0].execute(planTraj)
             with open('output.txt', 'a+') as f:
               f.write("\nExecution %f"%int(self.current_execution)+"\n Height %f Radius %f Angle %f Rotation %f Tilt %f"%(height,radius,angle,rotation,tilt_angle)+"\nPosition\n"+str(self.get_FK()[0].pose.position)+"\nOrientation\n"+str(self.get_FK()[0].pose.orientation)+"\n")
-            # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
+          
           else:
             self.publish_point(tarPose,[1,0,0])
             with open('output.txt', 'a+') as f:
               f.write("\nExecution %f"%int(self.current_execution)+"\n Height %f Radius %f Angle %f Rotation %f Tilt %f"%(height,radius,angle,rotation,tilt_angle)+"\nFailed!!\n")
-          
+          r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
           self.current_execution+=1
 
     with open('output.txt', 'a+') as f:
@@ -315,12 +315,12 @@ class ArmMoveIt:
     jump = 22 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
     
-    self.execute_circle(jump,rad_outer,-0.45,center)
+    #self.execute_circle(jump,rad_outer,-0.45,center)
     # self.execute_circle(jump,rad_inner,-0.45,center)
-    # self.execute_circle(jump,rad_outer,-0.35,center)
-    # self.execute_circle(jump,rad_inner,-0.35,center)
-    # self.execute_circle(jump,rad_outer,-0.25,center)
-    # self.execute_circle(jump,rad_inner,-0.25,center)
+    self.execute_circle(jump,rad_outer,-0.25,center)
+    self.execute_circle(jump,rad_inner,-0.25,center)
+    self.execute_circle(jump,rad_outer,-0.1,center)
+    self.execute_circle(jump,rad_inner,-0.1,center)
     # self.move_lin_act(self.lin_act_state-0.1)
     # self.execute_circle(jump,rad_outer,-0.3,center)
     # self.execute_circle(jump,rad_inner,-0.3,center)
@@ -362,7 +362,7 @@ def main():
     with open('output.txt', 'w+') as f:
       pass
 
-    arm.auto_circle(0.75,0.55,[1.1,0,-0.35])
+    arm.auto_circle(0.75,0.62,[1.1,0,-0.35])
        
   
 if __name__ == '__main__':
