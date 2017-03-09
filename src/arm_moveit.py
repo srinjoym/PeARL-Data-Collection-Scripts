@@ -269,7 +269,7 @@ class ArmMoveIt:
     for angle in range(-135,-46,jump):
   # for angle in range(-135,-134,jump):
       for tilt_angle in range(-10,11,10):
-        for rotation in range(0,1,10):
+        for rotation in range(-15,16,15):
         # for rotation in range(0,1,20):
           
           tarPose.position = self.calc_mov(angle,radius,height,center)
@@ -316,11 +316,11 @@ class ArmMoveIt:
     tarPose = geometry_msgs.msg.Pose()
     
     self.execute_circle(jump,rad_outer,-0.45,center)
-    self.execute_circle(jump,rad_inner,-0.45,center)
-    self.execute_circle(jump,rad_outer,-0.35,center)
-    self.execute_circle(jump,rad_inner,-0.35,center)
-    self.execute_circle(jump,rad_outer,-0.25,center)
-    self.execute_circle(jump,rad_inner,-0.25,center)
+    # self.execute_circle(jump,rad_inner,-0.45,center)
+    # self.execute_circle(jump,rad_outer,-0.35,center)
+    # self.execute_circle(jump,rad_inner,-0.35,center)
+    # self.execute_circle(jump,rad_outer,-0.25,center)
+    # self.execute_circle(jump,rad_inner,-0.25,center)
     # self.move_lin_act(self.lin_act_state-0.1)
     # self.execute_circle(jump,rad_outer,-0.3,center)
     # self.execute_circle(jump,rad_inner,-0.3,center)
