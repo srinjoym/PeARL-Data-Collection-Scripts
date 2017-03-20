@@ -91,11 +91,11 @@ class CollisionObject:
 
     leg_scale = [0.05,0.05,3]
     self.scene.add_box("table_leg",right_pose,right_scale)
-    rospy.sleep(2)
-    self.scene.add_box("right_arm",table_pose,table_scale)
-    rospy.sleep(2)
-    self.scene.add_box("table",leg_pose,leg_scale)
-    rospy.sleep(2)
+    rospy.sleep(5)
+    #self.scene.add_box("right_arm",table_pose,table_scale)
+    #rospy.sleep()
+    #self.scene.add_box("table",leg_pose,leg_scale)
+    #rospy.sleep(2)
 
 def main():
   collisionObject = CollisionObject()
