@@ -48,7 +48,7 @@ class ArmMoveIt:
     ## to one group of joints.  In this case the group is the joints in the left
     ## arm.  This interface can be used to plan and execute   motions on the left
     ## arm.
-    self.group = [moveit_commander.MoveGroupCommander("arm")]
+    self.group = [moveit_commander.MoveGroupCommander("left_arm")]
 
     # Set the planner
     self.planner = default_planner
@@ -58,10 +58,10 @@ class ArmMoveIt:
     # print "tolerance:"
     # print self.group[0].set_num_planning_attempts(5)
     # Set continuous joint names
-    self.continuous_joints = ['shoulder_pan_joint','wrist_1_joint','wrist_2_joint','wrist_3_joint']
+    self.continuous_joints = ['left_shoulder_pan_joint','left_wrist_1_joint','left_wrist_2_joint','left_wrist_3_joint']
     # NOTE: order that moveit currently is configured
     # ['right_shoulder_pan_joint', 'right_shoulder_lift_joint', 'right_elbow_joint', 'right_wrist_1_joint', 'right_wrist_2_joint', 'right_wrist_3_joint']
-    self.continuous_joints_list = [0,3,4,5] # joints that are continous
+    self.continuous_joints_list = [0,3,4,5,6,9,10,11] # joints that are continous
     topic = 'visualization_marker_array'
     self.publisher = rospy.Publisher(topic, MarkerArray)
     self.lin_act_controller = rospy.Publisher('/vector/linear_actuator_cmd', LinearActuatorCmd)
@@ -85,7 +85,7 @@ class ArmMoveIt:
     header = std_msgs.msg.Header()
     header.frame_id = root
     header.stamp = rospy.Time.now()
-    fk_link_names = ['right_ee_link']
+    fk_link_names = ['left_ee_link']
     robot_state = self.robot.get_current_state()    
     try:
       reply=compute_fk(header,fk_link_names,robot_state)
@@ -273,7 +273,7 @@ class ArmMoveIt:
           if(planTraj!=None):
             self.publish_point(tarPose,[0,1,0])
             print "going to angle " + str(angle)   
-            # self.group[0].execute(planTraj)
+            self.group[0].execute(planTraj)
             self.log(True,height,radius,angle,rotation,tilt_angle,self.get_FK()[0].pose.position,self.get_FK()[0].pose.orientation)
           else:
             self.publish_point(tarPose,[1,0,0])
@@ -302,12 +302,12 @@ class ArmMoveIt:
     jump = 22 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
     
-    self.execute_circle(jump,rad_outer,-0.45,center)
+    # self.execute_circle(jump,rad_outer,-0.45,center)
     # self.execute_circle(jump,rad_inner,-0.45,center)
     # self.execute_circle(jump,rad_outer,-0.35,center)
     # self.execute_circle(jump,rad_inner,-0.35,center)
     # self.execute_circle(jump,rad_outer,-0.25,center)
-    # self.execute_circle(jump,rad_inner,-0.25,center)
+    self.execute_circle(jump,rad_inner,-0.1,center)
     # self.move_lin_act(self.lin_act_state-0.1)
     # self.execute_circle(jump,rad_outer,-0.3,center)
     # self.execute_circle(jump,rad_inner,-0.3,center)
@@ -346,7 +346,7 @@ def main():
   if not rospy.is_shutdown():
     #r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
 
-    ##   Assigned tarPose the current Pose of the robot 
+    ##   Assigned tarPose the current Pose of the robotlp 
     #tarPose = arm.group[0].get_current_pose().pose
     #arm.auto_circle(0.57,0.35,[1.3,0,-0.35])
     last_file = 0

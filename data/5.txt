@@ -1,0 +1,16 @@
+
+Starting Run at Picture 1
+
+Picture 1
+ Height 0 Radius 0 Angle -135 Rotation -15 Tilt -10
+Position
+x: 0.931629982349
+y: -0.379297511321
+z: 0.780516614071
+Orientation
+x: -0.32449651126
+y: 0.678249210772
+z: 0.245353419025
+w: 0.611949117199
+
+*************************************
