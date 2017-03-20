@@ -274,22 +274,11 @@ class ArmMoveIt:
             self.publish_point(tarPose,[0,1,0])
             print "going to angle " + str(angle)   
             self.group[0].execute(planTraj)
-<<<<<<< HEAD
             self.log(True,height,radius,angle,rotation,tilt_angle,self.get_FK()[0].pose.position,self.get_FK()[0].pose.orientation)
           else:
             self.publish_point(tarPose,[1,0,0])
             self.log(False,height,radius,angle,rotation,tilt_angle)            
           # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
-=======
-            with open('output.txt', 'a+') as f:
-              f.write("\nExecution %f"%int(self.current_execution)+"\n Height %f Radius %f Angle %f Rotation %f Tilt %f"%(height,radius,angle,rotation,tilt_angle)+"\nPosition\n"+str(self.get_FK()[0].pose.position)+"\nOrientation\n"+str(self.get_FK()[0].pose.orientation)+"\n")
-          
-          else:
-            self.publish_point(tarPose,[1,0,0])
-            with open('output.txt', 'a+') as f:
-              f.write("\nExecution %f"%int(self.current_execution)+"\n Height %f Radius %f Angle %f Rotation %f Tilt %f"%(height,radius,angle,rotation,tilt_angle)+"\nFailed!!\n")
-          r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
->>>>>>> 7bb42322ad615074af1c37aac152f97569ab5bb2
           self.current_execution+=1
 
     with open(self.file_name, 'a+') as f:
@@ -313,24 +302,19 @@ class ArmMoveIt:
     jump = 22 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
     
-<<<<<<< HEAD
     # self.execute_circle(jump,rad_outer,-0.45,center)
     # self.execute_circle(jump,rad_inner,-0.45,center)
     # self.execute_circle(jump,rad_outer,-0.35,center)
     # self.execute_circle(jump,rad_inner,-0.35,center)
     # self.execute_circle(jump,rad_outer,-0.25,center)
-=======
-    #self.execute_circle(jump,rad_outer,-0.45,center)
-    # self.execute_circle(jump,rad_inner,-0.45,center)
-    self.execute_circle(jump,rad_outer,-0.25,center)
-    self.execute_circle(jump,rad_inner,-0.25,center)
-    self.execute_circle(jump,rad_outer,-0.1,center)
->>>>>>> 7bb42322ad615074af1c37aac152f97569ab5bb2
-    self.execute_circle(jump,rad_inner,-0.1,center)
+    # self.execute_circle(jump,rad_inner,-0.1,center)
     # self.move_lin_act(self.lin_act_state-0.1)
     # self.execute_circle(jump,rad_outer,-0.3,center)
     # self.execute_circle(jump,rad_inner,-0.3,center)
-
+    self.execute_circle(jump,rad_outer,-0.25,center)
+    self.execute_circle(jump,rad_inner,-0.25,center)
+    self.execute_circle(jump,rad_outer,-0.1,center)
+    self.execute_circle(jump,rad_inner,-0.1,center)
     
 
     # self.execute_circle(jump,rad_outer,-0.3,center)
