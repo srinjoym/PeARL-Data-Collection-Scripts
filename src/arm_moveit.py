@@ -19,6 +19,7 @@ from move_base import *
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
 from math import pi, floor, ceil, fabs, sin, cos, radians, atan
+from os import listdir
 
 class ArmMoveIt:
 
@@ -70,8 +71,8 @@ class ArmMoveIt:
     self.move_base = MoveBase()
     self.current_execution = 1
     self.lin_act_state = control_msgs.msg.JointTrajectoryControllerState()
+    self.file_name=""
 
-    
 
   def update_lin_act_callback(self,msg):
     self.lin_act_state = msg;
@@ -175,33 +176,6 @@ class ArmMoveIt:
       return None
 
   
-  def ask_position(arm,tarPose):
-    #Ask the user the values of the target position
-     while True:
-      try:   
-        inputPosition=input(""" \n Target position coord. (format: x,y,z or write -1 to take the robot current position ): """)      
-      
-        if inputPosition == -1:
-          inputPosition=tarPose.position  
-          return inputPosition
-        
-      except (ValueError,IOError,NameError):
-        print("\n Please, enter the coordinate in the following format: x,y,z ")
-        continue
-      else:          
-        if len(list(inputPosition)) == 3:
-          poseTmp= geometry_msgs.msg.Pose()
-          poseTmp.position.x=inputPosition[0]
-          poseTmp.position.y=inputPosition[1]
-          poseTmp.position.z=inputPosition[2]
-          return poseTmp.position
-        else:
-          print("\n Please, enter the coordinate in the following format: x,y,z ")
-          continue
-        
-  def ask_angle(self):
-    return input("Angle?")
-  
   def publish_point(self, pose,color):
     marker = Marker()
     marker.type = marker.CUBE
@@ -229,8 +203,6 @@ class ArmMoveIt:
     # print self.markerArray
     self.publisher.publish(self.markerArray)
 
-   
-  
 
   def calc_orientation(self,angle,radius,height,center,rotation,tilt_angle):
     calc_tilt_angle = atan((height-center[2]/radius))
@@ -260,18 +232,34 @@ class ArmMoveIt:
     
     return poseTmp.position
 
+  def get_next_pic(self):
+    r = requests.get("http://10.5.5.9/gp/gpControl/status")
+    data = r.json()
+    return data["status"]["38"] + 1
+    
+
+  def log(self,status,height,radius,angle,rotation,tilt_angle,real_position=None,real_orientation=None):
+      if status:
+        with open(self.file_name, 'a+') as f:
+          f.write("\nPicture %i"%int(self.get_next_pic())+"\n Height %i Radius %i Angle %i Rotation %i Tilt %i"%(height,radius,angle,rotation,tilt_angle)+"\nPosition\n"+str(real_position)+"\nOrientation\n"+str(real_orientation)+"\n")
+      else:
+        with open(self.file_name, 'a+') as f:
+          f.write("\nPicture %i"%int(self.get_next_pic())+"\n Height %i Radius %i Angle %i Rotation %i Tilt %i"%(height,radius,angle,rotation,tilt_angle)+"\nFailed!!\n")
+    
+      with open(self.file_name, 'a+') as f:
+            f.write("\n*************************************\n")
+      
+
   def execute_circle(self,jump,radius,height,center):
 
     tarPose = geometry_msgs.msg.Pose()
-    
-    
 
     for angle in range(-135,-46,jump):
   # for angle in range(-135,-134,jump):
       for tilt_angle in range(-10,11,10):
         for rotation in range(-15,16,15):
         # for rotation in range(0,1,20):
-          
+           
           tarPose.position = self.calc_mov(angle,radius,height,center)
           tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation,tilt_angle)
           print "Rotation ",rotation
@@ -285,23 +273,22 @@ class ArmMoveIt:
           if(planTraj!=None):
             self.publish_point(tarPose,[0,1,0])
             print "going to angle " + str(angle)   
-            self.group[0].execute(planTraj)
-            with open('output.txt', 'a+') as f:
-              f.write("\nExecution %f"%int(self.current_execution)+"\n Height %f Radius %f Angle %f Rotation %f Tilt %f"%(height,radius,angle,rotation,tilt_angle)+"\nPosition\n"+str(self.get_FK()[0].pose.position)+"\nOrientation\n"+str(self.get_FK()[0].pose.orientation)+"\n")
-            # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
+            # self.group[0].execute(planTraj)
+            self.log(True,height,radius,angle,rotation,tilt_angle,self.get_FK()[0].pose.position,self.get_FK()[0].pose.orientation)
           else:
             self.publish_point(tarPose,[1,0,0])
-            with open('output.txt', 'a+') as f:
-              f.write("\nExecution %f"%int(self.current_execution)+"\n Height %f Radius %f Angle %f Rotation %f Tilt %f"%(height,radius,angle,rotation,tilt_angle)+"\nFailed!!\n")
-          
+            self.log(False,height,radius,angle,rotation,tilt_angle)            
+          # r = requests.get("http://10.5.5.9/gp/gpControl/command/shutter?p=1")
           self.current_execution+=1
 
-    with open('output.txt', 'a+') as f:
+    with open(self.file_name, 'a+') as f:
             f.write("\nFinished Circle\n")
     return id
 
   def auto_circle(self,rad_outer,rad_inner,center):
     
+    with open(self.file_name, 'a+') as f:
+      f.write("\nStarting Run at Picture %i\n"%self.get_next_pic())
     # x_back_limit = 0.62
     x_forward_limit = 1.2
     # y_limit = 0.3
@@ -337,6 +324,9 @@ class ArmMoveIt:
     # self.execute_circle(jump,rad_outer,center)
     # self.execute_circle(jump,rad_inner,center)
 
+    with open(self.file_name, 'a+') as f:
+      f.write("\nFinished Run at Picture %i\n"%(self.get_next_pic()-1))
+
   def move_lin_act(self,diff):
     rospy.sleep(2)
     current_state = self.lin_act_state.actual.positions[0]
@@ -359,7 +349,14 @@ def main():
     ##   Assigned tarPose the current Pose of the robot 
     #tarPose = arm.group[0].get_current_pose().pose
     #arm.auto_circle(0.57,0.35,[1.3,0,-0.35])
-    with open('output.txt', 'w+') as f:
+    last_file = 0
+    for file_name in listdir("../data"):
+      if(int(file_name[0:len(file_name)-4])>last_file):
+        last_file = int(file_name[0:len(file_name)-4])
+
+    arm.file_name="../data/%i.txt"%(last_file+1)
+
+    with open(arm.file_name, 'w+') as f:
       pass
 
     arm.auto_circle(0.75,0.55,[1.1,0,-0.35])
