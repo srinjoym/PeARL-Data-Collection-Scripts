@@ -24,7 +24,9 @@ from os import listdir
 class ArmMoveIt:
 
   def __init__(self, planning_frame='linear_actuator_link', default_planner="RRTConnectkConfigDefault"):
-    # r = requests.get("http://10.5.5.9/gp/gpControl/command/mode?p=1")
+    r = requests.get("http://10.5.5.9/gp/gpControl/setting/17/2") #to put camera in picture mode
+    r = requests.get("http://10.5.5.9/gp/gpControl/setting/72/0")
+    r = requests.get("http://10.5.5.9/gp/gpControl/setting/58/0")
     # Make sure the moveit service is up and running
     rospy.logwarn("Waiting for MoveIt! to load")
     try:
