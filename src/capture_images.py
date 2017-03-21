@@ -19,9 +19,9 @@ from arm_moveit import *
 class CaptureImages:
 
   def __init__(self):
-    r = requests.get("http://10.5.5.9/gp/gpControl/setting/17/2") #to put camera in picture mode
-    r = requests.get("http://10.5.5.9/gp/gpControl/setting/72/0")
-    r = requests.get("http://10.5.5.9/gp/gpControl/setting/58/0")
+    #r = requests.get("http://10.5.5.9/gp/gpControl/setting/17/2") #to put camera in picture mode
+    #r = requests.get("http://10.5.5.9/gp/gpControl/setting/72/0")
+    #r = requests.get("http://10.5.5.9/gp/gpControl/setting/58/0")
     topic = 'visualization_marker_array'
     self.publisher = rospy.Publisher(topic, MarkerArray)
     rospy.sleep(2)
@@ -88,9 +88,10 @@ class CaptureImages:
     return poseTmp.position
 
   def get_next_pic(self):
-    r = requests.get("http://10.5.5.9/gp/gpControl/status")
-    data = r.json()
-    return data["status"]["38"] + 1
+    #r = requests.get("http://10.5.5.9/gp/gpControl/status")
+    #data = r.json()
+    #return data["status"]["38"] + 1
+    return 0
     
 
   def log(self,status,height,radius,angle,rotation,tilt_angle,real_position=None,real_orientation=None):
@@ -129,7 +130,7 @@ class CaptureImages:
             self.publish_point(tarPose,[0,1,0])
             print "going to angle " + str(angle)   
             self.arm.group[0].execute(planTraj)
-            self.log(True,height,radius,angle,rotation,tilt_angle,self.get_FK()[0].pose.position,self.get_FK()[0].pose.orientation)
+            self.log(True,height,radius,angle,rotation,tilt_angle,self.arm.get_FK()[0].pose.position,self.arm.get_FK()[0].pose.orientation)
           else:
             self.publish_point(tarPose,[1,0,0])
             self.log(False,height,radius,angle,rotation,tilt_angle)            
