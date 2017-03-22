@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
 from math import pi, floor, ceil, fabs, sin, cos, radians, atan
@@ -167,9 +169,9 @@ class CaptureImages:
     # self.move_lin_act(self.lin_act_state-0.1)
     # self.execute_circle(jump,rad_outer,-0.3,center)
     # self.execute_circle(jump,rad_inner,-0.3,center)
-    self.execute_circle(jump,rad_outer,-0.25,center)
+    # self.execute_circle(jump,rad_outer,-0.25,center)
     self.execute_circle(jump,rad_inner,-0.25,center)
-    self.execute_circle(jump,rad_outer,-0.1,center)
+    # self.execute_circle(jump,rad_outer,-0.1,center)
     self.execute_circle(jump,rad_inner,-0.1,center)
     
 
