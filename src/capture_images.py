@@ -21,9 +21,9 @@ from arm_moveit import *
 class CaptureImages:
 
   def __init__(self):
-    #r = requests.get("http://10.5.5.9/gp/gpControl/setting/17/2") #to put camera in picture mode
-    #r = requests.get("http://10.5.5.9/gp/gpControl/setting/72/0")
-    #r = requests.get("http://10.5.5.9/gp/gpControl/setting/58/0")
+    # r = requests.get("http://10.5.5.9/gp/gpControl/setting/17/2") #to put camera in picture mode
+    # r = requests.get("http://10.5.5.9/gp/gpControl/setting/72/0")
+    # r = requests.get("http://10.5.5.9/gp/gpControl/setting/58/0")
     topic = 'visualization_marker_array'
     self.publisher = rospy.Publisher(topic, MarkerArray)
     rospy.sleep(2)
@@ -65,8 +65,15 @@ class CaptureImages:
     calc_tilt_angle = atan((height-center[2]/radius))
     # print "tilt angle"
     # print calc_tilt_angle
-    quaternion = tf.transformations.quaternion_from_euler(radians(rotation), radians(angle+90),-radians(90)+radians(tilt_angle)+calc_tilt_angle,axes='szxy')
-    # ang_quaternion = tf.transformations.quaternion_from_euler(0, 0,-radians(15))
+    quaternion = tf.transformations.quaternion_from_euler(radians(rotation), radians(angle+90),radians(90)+radians(tilt_angle)+calc_tilt_angle,axes='szxy')
+    # quaternion = tf.transformations.quaternion_from_euler(0, -radians(90)+radians(tilt_angle)+calc_tilt_angle,0)
+    # quaternion = tf.transformations.quaternion_multiply(tf.transformations.quaternion_from_euler(radians(angle+90), 0,0),tf.transformations.quaternion_inverse(quaternion))
+    # quaternion = tf.transformations.quaternion_from_euler(0, -radians(90)+radians(tilt_angle)+calc_tilt_angle,0)
+    # quaternion = tf.transformations.quaternion_multiply(tf.transformations.quaternion_from_euler(radians(angle+90), 0,0),tf.transformations.quaternion_inverse(quaternion))
+    # quaternion = tf.transformations.quaternion_from_euler(0, -radians(90)+radians(tilt_angle)+calc_tilt_angle,0)
+    # quaternion = tf.transformations.quaternion_multiply(tf.transformations.quaternion_from_euler(radians(angle+90), 0,0),tf.transformations.quaternion_inverse(quaternion))
+    # quaternion= tf.transformations.quaternion_multiply(quaternion,quaternion2)
+    # ang_quaternion = tf.transformations.quaternion_from_euler(0, 0,-radians(15))transformations
 
     # quaternion = tf.transformations.quaternion_multiply(ba_quaternion,tf.transformations.quaternion_inverse(ang_quaternion))
 
@@ -90,13 +97,14 @@ class CaptureImages:
     return poseTmp.position
 
   def get_next_pic(self):
-    #r = requests.get("http://10.5.5.9/gp/gpControl/status")
-    #data = r.json()
-    #return data["status"]["38"] + 1
+    # r = requests.get("http://10.5.5.9/gp/gpControl/status")
+    # data = r.json()
+    # return data["status"]["38"] + 1
     return 0
     
 
   def log(self,status,height,radius,angle,rotation,tilt_angle,real_position=None,real_orientation=None):
+
       if status:
         with open(self.file_name, 'a+') as f:
           f.write("\nPicture %i"%int(self.get_next_pic())+"\n Height %i Radius %i Angle %i Rotation %i Tilt %i"%(height,radius,angle,rotation,tilt_angle)+"\nPosition\n"+str(real_position)+"\nOrientation\n"+str(real_orientation)+"\n")
@@ -105,19 +113,19 @@ class CaptureImages:
           f.write("\nPicture %i"%int(self.get_next_pic())+"\n Height %i Radius %i Angle %i Rotation %i Tilt %i"%(height,radius,angle,rotation,tilt_angle)+"\nFailed!!\n")
     
       with open(self.file_name, 'a+') as f:
-            f.write("\n*************************************\n")
+            f.write("*************************************")
       
 
   def execute_circle(self,jump,radius,height,center):
 
     tarPose = geometry_msgs.msg.Pose()
 
-    # for angle in range(-135,-46,jump):
-    for angle in range(-135,-134,jump):
-      # for tilt_angle in range(-10,11,10):
-      for tilt_angle in range(0,1,10): 
-        # for rotation in range(-15,16,15):
-        for rotation in range(0,1,20):
+    for angle in range(-135,-46,jump):
+    # for angle in range(-135,-134,jump):
+      for tilt_angle in range(-10,11,10):
+      # for tilt_angle in range(0,1,10): 
+        for rotation in range(-15,16,15):
+        # for rotation in range(0,1,20):
            
           tarPose.position = self.calc_mov(angle,radius,height,center)
           tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation,tilt_angle)
@@ -132,7 +140,7 @@ class CaptureImages:
           if(planTraj!=None):
             self.publish_point(tarPose,[0,1,0])
             print "going to angle " + str(angle)   
-            self.arm.group[0].execute(planTraj)
+            # self.arm.group[0].execute(planTraj)
             self.log(True,height,radius,angle,rotation,tilt_angle,self.arm.get_FK()[0].pose.position,self.arm.get_FK()[0].pose.orientation)
           else:
             self.publish_point(tarPose,[1,0,0])
@@ -161,10 +169,15 @@ class CaptureImages:
     jump = 22 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
     base_radius = 0.5
-    for angle in range(0,40,10):
+    # for angle in range(0,30,10):
+    #   height = base_radius*sin(radians(angle)) #increasing
+    #   radius = base_radius*cos(radians(angle)) #decreasing
+    #   self.execute_circle(jump,0.5-height,-0.25+height,center)
+
+    for angle in range(0,30,10):
       height = base_radius*sin(radians(angle)) #increasing
       radius = base_radius*cos(radians(angle)) #decreasing
-      self.execute_circle(jump,0.5-height,-0.25+height,center)
+      self.execute_circle(jump,0.7-height,-0.25+height,center)
     
 
     with open(self.file_name, 'a+') as f:
