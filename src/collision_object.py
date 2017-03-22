@@ -69,9 +69,9 @@ class CollisionObject:
     
     table_pose = geometry_msgs.msg.PoseStamped()
     table_pose.header.frame_id = "base_link"
-    table_pose.pose.position.x = 0.6+1.13;
+    table_pose.pose.position.x = 0.6+0.8;
     table_pose.pose.position.y = 0;
-    table_pose.pose.position.z = 0.46;
+    table_pose.pose.position.z = .4;
     table_pose.pose.orientation.x = 0;
     table_pose.pose.orientation.y = 0;
     table_pose.pose.orientation.z = 0;
