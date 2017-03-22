@@ -1,0 +1,68 @@
+
+Starting Run at Picture 0
+
+Picture 0
+ Height 0 Radius 0 Angle -90 Rotation 0 Tilt 0
+Position
+x: 0.828065514799
+y: 5.27283913261e-05
+z: 0.781949333714
+Orientation
+x: 1.12271638967e-05
+y: -0.542991519964
+z: 6.8276934011e-06
+w: 0.839738178883
+
+*************************************
+
+Finished Circle
+
+Picture 0
+ Height 0 Radius 0 Angle -90 Rotation 0 Tilt 0
+Position
+x: 0.886402493203
+y: 0.00996782476989
+z: 0.88510299081
+Orientation
+x: -0.0145023758147
+y: -0.530214546287
+z: 0.017166509139
+w: 0.847565647585
+
+*************************************
+
+Finished Circle
+
+Picture 0
+ Height 0 Radius 0 Angle -90 Rotation 0 Tilt 0
+Position
+x: 0.972554092736
+y: -0.00635105172724
+z: 0.975202812842
+Orientation
+x: 0.0199879278231
+y: -0.456566782643
+z: -0.00569948192056
+w: 0.889446328698
+
+*************************************
+
+Finished Circle
+
+Picture 0
+ Height 0 Radius 0 Angle -90 Rotation 0 Tilt 0
+Position
+x: 1.04959789691
+y: 0.0259482008515
+z: 1.06246478642
+Orientation
+x: -0.0760998984588
+y: -0.394632643511
+z: 0.030492121173
+w: 0.915174361898
+
+*************************************
+
+Finished Circle
+
+Finished Run at Picture -1

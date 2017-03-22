@@ -63,9 +63,9 @@ class CaptureImages:
 
   def calc_orientation(self,angle,radius,height,center,rotation,tilt_angle):
     calc_tilt_angle = atan((height-center[2]/radius))
-    print "tilt angle"
-    print calc_tilt_angle
-    quaternion = tf.transformations.quaternion_from_euler(radians(rotation), radians(angle+90),radians(90)+radians(tilt_angle)+calc_tilt_angle,axes='szxy')
+    # print "tilt angle"
+    # print calc_tilt_angle
+    quaternion = tf.transformations.quaternion_from_euler(radians(rotation), radians(angle+90),-radians(90)+radians(tilt_angle)+calc_tilt_angle,axes='szxy')
     # ang_quaternion = tf.transformations.quaternion_from_euler(0, 0,-radians(15))
 
     # quaternion = tf.transformations.quaternion_multiply(ba_quaternion,tf.transformations.quaternion_inverse(ang_quaternion))
@@ -112,11 +112,12 @@ class CaptureImages:
 
     tarPose = geometry_msgs.msg.Pose()
 
-    for angle in range(-135,-46,jump):
-  # for angle in range(-135,-134,jump):
-      for tilt_angle in range(-10,11,10):
-        for rotation in range(-15,16,15):
-        # for rotation in range(0,1,20):
+    # for angle in range(-135,-46,jump):
+    for angle in range(-135,-134,jump):
+      # for tilt_angle in range(-10,11,10):
+      for tilt_angle in range(0,1,10): 
+        # for rotation in range(-15,16,15):
+        for rotation in range(0,1,20):
            
           tarPose.position = self.calc_mov(angle,radius,height,center)
           tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation,tilt_angle)
@@ -156,34 +157,15 @@ class CaptureImages:
     centerPose.position.z = center[2]
     self.publish_point(centerPose,[0,0,1] )
     #if(input("Continue")==-1):
-    #	return
+    # return
     jump = 22 #hard coded for now
     tarPose = geometry_msgs.msg.Pose()
+    base_radius = 0.5
+    for angle in range(0,40,10):
+      height = base_radius*sin(radians(angle)) #increasing
+      radius = base_radius*cos(radians(angle)) #decreasing
+      self.execute_circle(jump,0.5-height,-0.25+height,center)
     
-    # self.execute_circle(jump,rad_outer,-0.45,center)
-    # self.execute_circle(jump,rad_inner,-0.45,center)
-    # self.execute_circle(jump,rad_outer,-0.35,center)
-    # self.execute_circle(jump,rad_inner,-0.35,center)
-    # self.execute_circle(jump,rad_outer,-0.25,center)
-    # self.execute_circle(jump,rad_inner,-0.1,center)
-    # self.move_lin_act(self.lin_act_state-0.1)
-    # self.execute_circle(jump,rad_outer,-0.3,center)
-    # self.execute_circle(jump,rad_inner,-0.3,center)
-    # self.execute_circle(jump,rad_outer,-0.25,center)
-    self.execute_circle(jump,rad_inner,-0.25,center)
-    # self.execute_circle(jump,rad_outer,-0.1,center)
-    self.execute_circle(jump,rad_inner,-0.1,center)
-    
-
-    # self.execute_circle(jump,rad_outer,-0.3,center)
-    # self.execute_circle(jump,rad_inner,-0.3,center)
-    # self.execute_circle(jump,rad_outer,-0.3,center)
-    # self.execute_circle(jump,rad_inner,-0.3,center)
-    
-
-    # self.move_base.simple_move(center,1)
-    # self.execute_circle(jump,rad_outer,center)
-    # self.execute_circle(jump,rad_inner,center)
 
     with open(self.file_name, 'a+') as f:
       f.write("\nFinished Run at Picture %i\n"%(self.get_next_pic()-1))

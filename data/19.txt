@@ -1,0 +1,26 @@
+
+Starting Run at Picture 0
+
+Picture 0
+ Height 0 Radius 0 Angle -90 Rotation 0 Tilt 0
+Failed!!
+
+*************************************
+
+Finished Circle
+
+Picture 0
+ Height 0 Radius 0 Angle -90 Rotation 0 Tilt 0
+Position
+x: 0.701760378581
+y: 5.24050769644e-05
+z: 0.955569107927
+Orientation
+x: 0.000138342971094
+y: 0.846859864948
+z: -0.000102426270282
+w: 0.53181607677
+
+*************************************
+
+Finished Circle
