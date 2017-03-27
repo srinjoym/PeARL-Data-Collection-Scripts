@@ -44,20 +44,28 @@ class CaptureImages:
     marker.color.r = color[0]
     marker.color.g= color[1]
     marker.color.b = color[2]
-    marker.pose = pose
+    marker.pose.position.x = pose.position.x
+    marker.pose.position.y = pose.position.y
+    marker.pose.position.z = pose.position.z
+    marker.pose.orientation.w = pose.orientation.w
+    marker.pose.orientation.x = pose.orientation.x
+    marker.pose.orientation.y = pose.orientation.y
+    marker.pose.orientation.z = pose.orientation.z
     marker.header.frame_id = "/linear_actuator_link"
     # print self.marker
-    #markerArray = MarkerArray()
+    # markerArray = MarkerArray()
     self.markerArray.markers.append(marker)
-    print "marker array"
-    print self.markerArray
+    # print "marker array"
+    
     id = 0
     for m in self.markerArray.markers:
       m.id = id
-      print str(id)+"\n"
-      print m.pose
+      # print str(id)+"\n"
+      # print m.pose.position.x
       id += 1
+      # self.markerArray.markers.append(m)
     # print self.markerArray
+
     self.publisher.publish(self.markerArray)
 
 
@@ -65,9 +73,15 @@ class CaptureImages:
     calc_tilt_angle = atan((height-center[2]/radius))
     # print "tilt angle"
     # print calc_tilt_angle
-    quaternion = tf.transformations.quaternion_from_euler(radians(rotation), radians(angle+90),radians(90)+radians(tilt_angle)+calc_tilt_angle,axes='szxy')
-    # quaternion = tf.transformations.quaternion_from_euler(0, -radians(90)+radians(tilt_angle)+calc_tilt_angle,0)
-    # quaternion = tf.transformations.quaternion_multiply(tf.transformations.quaternion_from_euler(radians(angle+90), 0,0),tf.transformations.quaternion_inverse(quaternion))
+    # quaternion = tf.transformations.quaternion_from_euler(radians(angle+90),radians(rotation), radians(90)+radians(tilt_angle)+calc_tilt_angle,axes='szyx')
+    quaternion = tf.transformations.quaternion_from_euler(radians(angle+90),radians(90)+radians(tilt_angle)+calc_tilt_angle, radians(tilt_angle)+calc_tilt_angle)
+    quaternion2 = tf.transformations.quaternion_from_euler(-radians(tilt_angle)-calc_tilt_angle,0, radians(rotation))
+    quaternion = tf.transformations.quaternion_multiply(quaternion,tf.transformations.quaternion_inverse(quaternion2))
+    # quaternion_tilt = tf.transformations.quaternion_from_euler(0, radians(90)+radians(tilt_angle)+calc_tilt_angle,0)
+    # quaternion_aim = tf.transformations.quaternion_from_euler(radians(angle+90),0,0)
+    # quaternion_var = tf.transformations.quaternion_from_euler(radians(20),0,0)
+    # quaternion_aim = tf.transformations.quaternion_multiply(quaternion_tilt,quaternion_aim)
+    # quaternion_var = tf.transformations.quaternion_multiply(quaternion_aim,quaternion_var)
     # quaternion = tf.transformations.quaternion_from_euler(0, -radians(90)+radians(tilt_angle)+calc_tilt_angle,0)
     # quaternion = tf.transformations.quaternion_multiply(tf.transformations.quaternion_from_euler(radians(angle+90), 0,0),tf.transformations.quaternion_inverse(quaternion))
     # quaternion = tf.transformations.quaternion_from_euler(0, -radians(90)+radians(tilt_angle)+calc_tilt_angle,0)
@@ -77,12 +91,27 @@ class CaptureImages:
 
     # quaternion = tf.transformations.quaternion_multiply(ba_quaternion,tf.transformations.quaternion_inverse(ang_quaternion))
 
-    pose= geometry_msgs.msg.Pose()
-    pose.orientation.x = quaternion[0]
-    pose.orientation.y = quaternion[1]
-    pose.orientation.z = quaternion[2]
-    pose.orientation.w = quaternion[3]  
-    return  pose.orientation                
+    # pose1= geometry_msgs.msg.Pose()
+    # pose1.orientation.x = quaternion_tilt[0]
+    # pose1.orientation.y = quaternion_tilt[1]
+    # pose1.orientation.z = quaternion_tilt[2]
+    # pose1.orientation.w = quaternion_tilt[3]  
+    # pose2= geometry_msgs.msg.Pose()
+    # pose2.orientation.x = quaternion_aim[0]
+    # pose2.orientation.y = quaternion_aim[1]
+    # pose2.orientation.z = quaternion_aim[2]
+    # pose2.orientation.w = quaternion_aim[3]  
+    # pose3= geometry_msgs.msg.Pose()
+    # pose3.orientation.x = quaternion_var[0]
+    # pose3.orientation.y = quaternion_var[1]
+    # pose3.orientation.z = quaternion_var[2]
+    # pose3.orientation.w = quaternion_var[3]  
+    pose1= geometry_msgs.msg.Pose()
+    pose1.orientation.x = quaternion[0]
+    pose1.orientation.y = quaternion[1]
+    pose1.orientation.z = quaternion[2]
+    pose1.orientation.w = quaternion[3] 
+    return  [pose1.orientation]           
 
   def calc_mov(self,angle,radius,height,center):
     rad = radians(angle)
@@ -121,27 +150,42 @@ class CaptureImages:
     tarPose = geometry_msgs.msg.Pose()
 
     for angle in range(-135,-46,jump):
-    # for angle in range(-135,-134,jump):
+    # for angle in range(-135,-110,jump):
       for tilt_angle in range(-10,11,10):
       # for tilt_angle in range(0,1,10): 
         for rotation in range(-15,16,15):
-        # for rotation in range(0,1,20):
            
           tarPose.position = self.calc_mov(angle,radius,height,center)
-          tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation,tilt_angle)
-          print "Rotation ",rotation
-          print "Angle: ", angle
-          print "Radius: ", radius
-          print "Height: ", height
-          print "center: ", center
-          print '\n The target coordinate is: %s \n' %tarPose
-          jointTarg = self.arm.get_IK(tarPose)
-          planTraj = self.arm.plan_jointTargetInput(jointTarg)
-          if(planTraj!=None):
+          tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation,tilt_angle)[0]
+        
+          jointTarg1 = self.arm.get_IK(tarPose)
+          planTraj1 = self.arm.plan_jointTargetInput(jointTarg1)
+
+          # tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation,tilt_angle)[1]
+          # jointTarg2 = self.arm.get_IK(tarPose)
+          # planTraj2 = self.arm.plan_jointTargetInput(jointTarg2)
+
+          # tarPose.orientation = self.calc_orientation(angle,radius,height,center,rotation,tilt_angle)[2]
+          # jointTarg3 = self.arm.get_IK(tarPose)
+          # planTraj3 = self.arm.plan_jointTargetInput(jointTarg3)
+
+          if(planTraj1!=None):
             self.publish_point(tarPose,[0,1,0])
             print "going to angle " + str(angle)   
-            #self.arm.group[0].execute(planTraj)
+            # self.arm.group[0].execute(planTraj1)
+            print "first rotation"
+            # rospy.sleep(5)
+            # self.publish_point(tarPose,[0,1,0])
+            # # self.arm.group[0].execute(planTraj2)
+            # print "second rotation"
+            # # rospy.sleep(5)
+            # self.publish_point(tarPose,[0,1,0])
+            # # self.arm.group[0].execute(planTraj3)
+            # print "third rotation"
+            # rospy.sleep(5)
             self.log(True,height,radius,angle,rotation,tilt_angle,self.arm.get_FK()[0].pose.position,self.arm.get_FK()[0].pose.orientation)
+            # rospy.sleep(5)
+          
           else:
             self.publish_point(tarPose,[1,0,0])
             self.log(False,height,radius,angle,rotation,tilt_angle)            
@@ -150,7 +194,6 @@ class CaptureImages:
 
     with open(self.file_name, 'a+') as f:
             f.write("\nFinished Circle\n")
-    return id
 
   def auto_circle(self,rad_outer,rad_inner,center):
     
@@ -172,12 +215,12 @@ class CaptureImages:
     for angle in range(0,30,10):
       height = base_radius*sin(radians(angle)) #increasing
       radius = base_radius*cos(radians(angle)) #decreasing
-      self.execute_circle(jump,0.6-height,-0.25+height,center)
+      self.execute_circle(jump,0.6-height,-0.35+height,center)
 
     for angle in range(0,30,10):
       height = base_radius*sin(radians(angle)) #increasing
       radius = base_radius*cos(radians(angle)) #decreasing
-      self.execute_circle(jump,0.75-height,-0.25+height,center)
+      self.execute_circle(jump,0.75-height,-0.35+height,center)
     
 
     with open(self.file_name, 'a+') as f:

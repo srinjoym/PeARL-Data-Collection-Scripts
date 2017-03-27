@@ -77,7 +77,7 @@ class CollisionObject:
     table_pose.pose.orientation.z = 0;
     table_pose.pose.orientation.w = 1;
 
-    table_scale = [0.6,1.23,.74]
+    table_scale = [0.6,1.23,.9]
     
     leg_pose = geometry_msgs.msg.PoseStamped()
     leg_pose.header.frame_id = "linear_actuator_link"
