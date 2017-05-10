@@ -1,0 +1,27 @@
+
+Starting Run at Picture 0
+
+Picture 0
+ Height 0 Radius 0 Angle -135 Rotation 0 Tilt 0
+Failed!!
+*************************************
+Picture 0
+ Height 0 Radius 0 Angle -113 Rotation 0 Tilt 0
+Failed!!
+*************************************
+Picture 0
+ Height 0 Radius 0 Angle -91 Rotation 0 Tilt 0
+Failed!!
+*************************************
+Picture 0
+ Height 0 Radius 0 Angle -69 Rotation 0 Tilt 0
+Position
+x: -0.0381085491368
+y: -0.378205788801
+z: 0.577508385554
+Orientation
+x: 0.269376800286
+y: 0.464745053765
+z: -0.788947170274
+w: 0.298346337309
+*************************************

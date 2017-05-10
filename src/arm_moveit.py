@@ -48,15 +48,16 @@ class ArmMoveIt:
     ## to one group of joints.  In this case the group is the joints in the left
     ## arm.  This interface can be used to plan and execute   motions on the left
     ## arm.
-    self.group = [moveit_commander.MoveGroupCommander("arm")]
+    self.group = [moveit_commander.MoveGroupCommander("left_arm")]
 
     # Set the planner
     self.planner = default_planner
 
     # Set the planning pose reference frame
     self.group[0].set_pose_reference_frame(planning_frame)
+    #self.group[0].set_goal_position_tolerance(0.5)
     # Set continuous joint names
-    self.continuous_joints = ['shoulder_pan_joint','wrist_1_joint','wrist_2_joint','wrist_3_joint']
+    self.continuous_joints = ['left_shoulder_pan_joint','left_wrist_1_joint','left_wrist_2_joint','left_wrist_3_joint']
     # NOTE: order that moveit currently is configured
     # ['right_shoulder_pan_joint', 'right_shoulder_lift_joint', 'right_elbow_joint', 'right_wrist_1_joint', 'right_wrist_2_joint', 'right_wrist_3_joint']
     self.continuous_joints_list = [0,3,4,5] # joints that are continous

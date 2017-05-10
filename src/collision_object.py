@@ -36,7 +36,7 @@ class CollisionObject:
 
     self.scene = moveit_commander.PlanningSceneInterface()
 
-    self.group = [moveit_commander.MoveGroupCommander("arm")] #change this to right_arm or left_arm
+    self.group = [moveit_commander.MoveGroupCommander("left_arm")] #change this to right_arm or left_arm
 
     self.planner = default_planner
 
@@ -55,23 +55,24 @@ class CollisionObject:
  
   def publish_collision_object(self):
     
-    right_pose = geometry_msgs.msg.PoseStamped()
-    right_pose.header.frame_id = "linear_actuator_link"
-    right_pose.pose.position.x = 0.1;
-    right_pose.pose.position.y = 0;
-    right_pose.pose.position.z = 0.1;
-    right_pose.pose.orientation.x = 0;
-    right_pose.pose.orientation.y = 0;
-    right_pose.pose.orientation.z = 0;
-    right_pose.pose.orientation.w = 1;
+    # right_pose = geometry_msgs.msg.PoseStamped()
+    # right_pose.header.frame_id = "linear_actuator_link"
+    # right_pose.pose.position.x = 0.1;
+    # right_pose.pose.position.y = 0;
+    # right_pose.pose.position.z = 0.1;
+    # right_pose.pose.orientation.x = 0;
+    # right_pose.pose.orientation.y = 0;
+    # right_pose.pose.orientation.z = 0;
+    # right_pose.pose.orientation.w = 1;
 
-    right_scale = [.1,.1,.1]
+    # right_scale = [.1,.1,.1]
     
     table_pose = geometry_msgs.msg.PoseStamped()
     table_pose.header.frame_id = "base_link"
-    table_pose.pose.position.x = 0.6+0.8;
+    # table_pose.pose.position.x = 0.6+0.8;
+    table_pose.pose.position.x = 1.25+.3; #distance + half width
     table_pose.pose.position.y = 0;
-    table_pose.pose.position.z = .4;
+    table_pose.pose.position.z = .45;
     table_pose.pose.orientation.x = 0;
     table_pose.pose.orientation.y = 0;
     table_pose.pose.orientation.z = 0;
@@ -79,20 +80,19 @@ class CollisionObject:
 
     table_scale = [0.6,1.23,.9]
     
-    leg_pose = geometry_msgs.msg.PoseStamped()
-    leg_pose.header.frame_id = "linear_actuator_link"
-    leg_pose.pose.position.x = 1.2;
-    leg_pose.pose.position.y = 0;
-    leg_pose.pose.position.z = -1;
-    leg_pose.pose.orientation.x = 0;
-    leg_pose.pose.orientation.y = 0;
-    leg_pose.pose.orientation.z = 0;
-    leg_pose.pose.orientation.w = 1;
+    # leg_pose = geometry_msgs.msg.PoseStamped()
+    # leg_pose.header.frame_id = "linear_actuator_link"
+    # leg_pose.pose.position.x = 1.2;
+    # leg_pose.pose.position.y = 0;
+    # leg_pose.pose.position.z = -1;
+    # leg_pose.pose.orientation.x = 0;
+    # leg_pose.pose.orientation.y = 0;
+    # leg_pose.pose.orientation.z = 0;
+    # leg_pose.pose.orientation.w = 1;
 
-    leg_scale = [0.05,0.05,3]
-    self.scene.add_box("table_leg",right_pose,right_scale)
-    rospy.sleep(5)
-    self.scene.add_box("right_arm",table_pose,table_scale)
+    #leg_scale = [0.05,0.05,3]
+   
+    self.scene.add_box("table",table_pose,table_scale)
     rospy.sleep(5)
     #self.scene.add_box("table",leg_pose,leg_scale)
     #rospy.sleep(2)
