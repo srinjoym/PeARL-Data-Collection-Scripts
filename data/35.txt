@@ -1,0 +1,43 @@
+
+Starting Run at Picture 0
+
+Picture 0
+ Height 0 Radius 0 Angle -135 Rotation 0 Tilt 0
+Position
+x: 0.903838937945
+y: -0.424268058046
+z: 1.13170473849
+Orientation
+x: 0.226450674488
+y: -0.545307474662
+z: 0.308590164971
+w: 0.745742556238
+*************************************
+Picture 0
+ Height 0 Radius 0 Angle -113 Rotation 0 Tilt 0
+Position
+x: 0.775738895962
+y: -0.234457350942
+z: 1.13177617599
+Orientation
+x: 0.118230980039
+y: -0.578859363265
+z: 0.160782675407
+w: 0.790627727953
+*************************************
+Picture 0
+ Height 0 Radius 0 Angle -91 Rotation 0 Tilt 0
+Position
+x: 0.728224202232
+y: -0.0104988057059
+z: 1.13166759556
+Orientation
+x: 0.00536810088637
+y: -0.590474751632
+z: 0.00737925461797
+w: 0.807004521536
+*************************************
+Picture 0
+ Height 0 Radius 0 Angle -69 Rotation 0 Tilt 0
+Failed!!
+*************************************

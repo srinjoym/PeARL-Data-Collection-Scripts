@@ -48,28 +48,29 @@ class ArmMoveIt:
     ## to one group of joints.  In this case the group is the joints in the left
     ## arm.  This interface can be used to plan and execute   motions on the left
     ## arm.
-    self.group = [moveit_commander.MoveGroupCommander("arm")]
+    self.group = [moveit_commander.MoveGroupCommander("left_arm"),moveit_commander.MoveGroupCommander("right_arm")]
 
     # Set the planner
     self.planner = default_planner
 
     # Set the planning pose reference frame
     self.group[0].set_pose_reference_frame(planning_frame)
+    self.group[1].set_pose_reference_frame(planning_frame)
     # Set continuous joint names
-    self.continuous_joints = ['shoulder_pan_joint','wrist_1_joint','wrist_2_joint','wrist_3_joint']
+    self.continuous_joints = ['left_shoulder_pan_joint','left_wrist_1_joint','left_wrist_2_joint','left_wrist_3_joint']
     # NOTE: order that moveit currently is configured
     # ['right_shoulder_pan_joint', 'right_shoulder_lift_joint', 'right_elbow_joint', 'right_wrist_1_joint', 'right_wrist_2_joint', 'right_wrist_3_joint']
     self.continuous_joints_list = [0,3,4,5] # joints that are continous
     
-    self.lin_act_controller = rospy.Publisher('/vector/linear_actuator_cmd', LinearActuatorCmd)
-    rospy.Subscriber('/linear_actuator_controller/state', JointTrajectoryControllerState, self.update_lin_act_callback)
-    rospy.sleep(2)
-    self.lin_act_state = control_msgs.msg.JointTrajectoryControllerState()
+    # self.lin_act_controller = rospy.Publisher('/vector/linear_actuator_cmd', LinearActuatorCmd)
+    # rospy.Subscriber('/linear_actuator_controller/state', JointTrajectoryControllerState, self.update_lin_act_callback)
+    # rospy.sleep(2)
+    # self.lin_act_state = control_msgs.msg.JointTrajectoryControllerState()
 
+#******************************************************************************
+  # DEPRECATED
+#******************************************************************************
 
-  def update_lin_act_callback(self,msg):
-    self.lin_act_state = msg;
-  
   def get_FK(self, root = 'base_link'):
 
     rospy.wait_for_service('compute_fk')
@@ -86,7 +87,7 @@ class ArmMoveIt:
     except rospy.ServiceException, e:
       print "Service call failed: %s"%e
 
-  def get_IK(self, newPose, root = None):
+  def get_IK(self, newPose,arm_num, root = None):
     ## from a defined newPose (geometry_msgs.msg.Pose()), retunr its correspondent joint angle(list)
     rospy.wait_for_service('compute_ik')
     compute_ik = rospy.ServiceProxy('compute_ik', moveit_msgs.srv.GetPositionIK)
@@ -101,7 +102,8 @@ class ArmMoveIt:
     wkPose.pose=newPose
 
     msgs_request = moveit_msgs.msg.PositionIKRequest()
-    msgs_request.group_name = self.group[0].get_name() # name: arm
+    msgs_request.group_name = self.group[arm_num].get_name() # name: arm
+    # msgs_request.group_name = "left_arm"
     # msgs_request.robot_state = robot.get_current_state()
     msgs_request.pose_stamped = wkPose
     msgs_request.timeout.secs = 2
@@ -154,13 +156,13 @@ class ArmMoveIt:
 
 #   '''Older functions - left for backwards compatibility'''
 
-  def plan_jointTargetInput(self,target_joint):
+  def plan_jointTargetInput(self,target_joint,arm_num):
     ## input: target joint angles (list) of the robot
     ## output: plan from current joint angles to the target one
     try:
-      self.group[0].set_joint_value_target(self._simplify_joints(target_joint))
-      self.group[0].set_planner_id(self.planner)
-      planAns=self.group[0].plan()
+      self.group[arm_num].set_joint_value_target(self._simplify_joints(target_joint))
+      self.group[arm_num].set_planner_id(self.planner)
+      planAns=self.group[arm_num].plan()
       return planAns
     except:
       print 'No plan found, see the moveit terminal for the error'
