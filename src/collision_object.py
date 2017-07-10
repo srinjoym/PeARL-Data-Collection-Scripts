@@ -51,11 +51,26 @@ def publish_collision_object(scene,goal_position):
     leg_pose.pose.orientation.w = 1;
 
     leg_scale = [0.05,0.05,0.3]
+
+
+    floor_pose =  geometry_msgs.msg.PoseStamped()
+    floor_pose.header.frame_id = "base_link"
+    floor_pose.pose.position.x = 0
+    floor_pose.pose.position.y = 0
+    floor_pose.pose.position.z = 0.1
+    floor_pose.pose.orientation.x = 0;
+    floor_pose.pose.orientation.y = 0;
+    floor_pose.pose.orientation.z = 0;
+    floor_pose.pose.orientation.w = 1;
+
+    floor_scale = [5,5,0.01]
+
    
     scene.add_box("table",table_pose,table_scale)
     rospy.sleep(2) #if collision objects don't show try increasing these delays
     scene.attach_box("left_ee_link","leg",leg_pose,leg_scale,["table"])
     rospy.sleep(2)
-
+    scene.add_box("floor",floor_pose,floor_scale)
+    rospy.sleep(2)
 
   
