@@ -68,7 +68,7 @@ def publish_collision_object(scene,goal_position):
    
     scene.add_box("table",table_pose,table_scale)
     rospy.sleep(2) #if collision objects don't show try increasing these delays
-    scene.attach_box("left_ee_link","leg",leg_pose,leg_scale,["table"])
+    scene.attach_box("left_ee_link","leg",leg_pose,leg_scale)
     rospy.sleep(2)
     scene.add_box("floor",floor_pose,floor_scale)
     rospy.sleep(2)
